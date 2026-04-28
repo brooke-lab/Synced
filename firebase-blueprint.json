@@ -14,6 +14,7 @@
         "partnerId": { "type": "string", "description": "UID of the linked partner." },
         "coupleId": { "type": "string", "description": "ID of the shared couple document." },
         "lastSeen": { "type": "string", "format": "date-time" },
+        "role": { "type": "string", "enum": ["owner", "member"], "description": "The user's role within the space." },
         "nicknames": { 
           "type": "object", 
           "additionalProperties": { "type": "string" },
@@ -48,7 +49,7 @@
         "songTitle": { "type": "string" },
         "artist": { "type": "string" },
         "coverUrl": { "type": "string" },
-        "spotifyUrl": { "type": "string" },
+        "songUrl": { "type": "string" },
         "message": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -148,9 +149,38 @@
         "url": { "type": "string" },
         "type": { "type": "string", "enum": ["image", "video"] },
         "addedBy": { "type": "string" },
+        "caption": { "type": "string", "description": "Short description for the memory." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Moods or activities associated with the memory." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["url", "type", "addedBy"]
+    },
+    "PlaylistItem": {
+      "title": "PlaylistItem",
+      "description": "A song in the shared couple playlist.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "songUrl": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "artist", "addedBy"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "A record of an action taken by a member of the couple.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["music", "gallery", "goal", "plan", "reflection", "status", "movie", "nickname"] },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "metadata": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "userId", "content", "createdAt"]
     }
   },
   "firestore": {
@@ -193,6 +223,14 @@
     "/couples/{coupleId}/gallery/{mediaId}": {
       "schema": "GalleryItem",
       "description": "Shared gallery of memories."
+    },
+    "/couples/{coupleId}/playlist/{songId}": {
+      "schema": "PlaylistItem",
+      "description": "Shared couple playlist."
+    },
+    "/couples/{coupleId}/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Feed of activities for the couple."
     }
   }
 }

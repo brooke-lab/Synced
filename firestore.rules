@@ -39,7 +39,7 @@ service cloud.firestore {
                      isValidUser(incoming());
       allow update: if isSignedIn() && request.auth.uid == userId && 
                      isValidUser(incoming()) &&
-                     incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'status', 'statusEmoji', 'partnerId', 'coupleId', 'lastSeen', 'nicknames']);
+                     incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'status', 'statusEmoji', 'partnerId', 'coupleId', 'lastSeen', 'nicknames', 'role']);
     }
 
     function isValidUser(data) {
@@ -48,6 +48,7 @@ service cloud.firestore {
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 50)) &&
              (!('status' in data) || (data.status is string && data.status.size() <= 100)) &&
              (!('statusEmoji' in data) || (data.statusEmoji is string && data.statusEmoji.size() <= 10)) &&
+             (!('role' in data) || (data.role in ['owner', 'member'])) &&
              (!('nicknames' in data) || (data.nicknames is map));
     }
 
@@ -73,6 +74,12 @@ service cloud.firestore {
       allow read: if isMemberOfCouple(coupleId);
       allow create: if isMemberOfCouple(coupleId) && request.resource.data.addedBy == request.auth.uid;
       allow delete: if isMemberOfCouple(coupleId) && (resource.data.addedBy == request.auth.uid);
+    }
+
+    match /couples/{coupleId}/activities/{activityId} {
+      allow read: if isMemberOfCouple(coupleId);
+      allow create: if isMemberOfCouple(coupleId) && incoming().userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /couples/{coupleId}/reflections/{reflectionId} {

@@ -35,8 +35,14 @@ export default function WelcomeScreen() {
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-5xl font-serif font-black tracking-tight text-[#4A4440]">Synced</h1>
-          <p className="text-lg text-[#6B635D] max-w-xs mx-auto leading-relaxed">
+          <h1 className="text-7xl font-display font-black tracking-tight text-[#4A4440] uppercase leading-[0.85] -skew-x-6">
+            Synced
+          </h1>
+          <div className="flex items-center justify-center space-x-2 text-[10px] font-mono uppercase tracking-[0.2em] opacity-40">
+            <span>[ SYSTEM LOADED ]</span>
+            <span className="w-1 h-1 bg-brand rounded-full animate-pulse" />
+          </div>
+          <p className="text-lg text-[#6B635D] max-w-xs mx-auto leading-relaxed font-serif italic">
             A soft, private space designed for just the two of you.
           </p>
         </div>

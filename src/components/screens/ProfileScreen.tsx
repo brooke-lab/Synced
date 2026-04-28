@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, LogOut, Link2, Ghost, Sparkles, Heart, Copy, Check, Palette, ShieldAlert, Trash2, Edit3, Save } from 'lucide-react';
+import { User, LogOut, Link2, Ghost, Sparkles, Heart, Copy, Check, Palette, ShieldAlert, Trash2, Edit3, Save, UserCircle } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { signOut, db } from '../../lib/firebase';
 import { doc, updateDoc, setDoc, getDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { THEMES } from '../../constants';
+import { logActivity } from '../../lib/activityLogger';
 
 export default function ProfileScreen() {
   const { user, couple, partner } = useAuth();
   const [linkCode, setLinkCode] = useState('');
-  const [generatedCode, setGeneratedCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,47 +42,92 @@ export default function ProfileScreen() {
   };
 
   const updatePartnerNickname = async () => {
-    if (!user || !partner || !newNickname.trim()) return;
+    if (!user || !partner || !newNickname.trim() || !couple?.id) return;
     try {
       const updatedNicknames = { ...user.nicknames, [partner.uid]: newNickname };
       await updateDoc(doc(db, 'users', user.uid), {
         nicknames: updatedNicknames
       });
+
+      await logActivity(
+        couple.id,
+        user.uid,
+        'nickname',
+        `set a new nickname for ${partner.displayName || 'their partner'}: "${newNickname}"`,
+        { nickname: newNickname, partnerId: partner.uid }
+      );
+
       setIsEditingNickname(false);
     } catch (e) {
       console.error(e);
     }
   };
 
-  const generateCode = () => {
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setGeneratedCode(code);
-    setGeneratedCode(user?.uid?.substring(0, 6).toUpperCase() || '');
-  };
-
   const coupleLink = async () => {
     if (!linkCode || !user) return;
     setError('');
     try {
-      const coupleId = `couple_${user.uid.substring(0,4)}_${linkCode}`;
+      // Find the partner by their invitation code
+      // Invitation code is user.uid.substring(0, 6)
+      // This is a bit tricky with only Firestore client SDK since we can't easily query by substring
+      // But we can assume the code IS the UID start.
+      // For a real app, I'd have a separate invitation codes collection.
+      // Let's assume the user enters the FULL UID for now or I provide a search by email?
+      // Actually, I'll stick to the provided code but I'll update the logic to be more functional.
       
+      // Let's use the code to "search" for a user.
+      // Actually, the simplest is to have the 'coupleId' be the joiner's way to find the creator's space.
+      // If user A creates a space, they are 'owner'.
+      // If user B joins, they are 'member'.
+      
+      const coupleId = `couple_${linkCode}_${user.uid.substring(0,6)}`;
       const coupleRef = doc(db, 'couples', coupleId);
-      await setDoc(coupleRef, {
-        members: [user.uid, 'PARTNER_PLACEHOLDER'],
-        createdAt: serverTimestamp(),
-        theme: 'default',
-        loveLetterDay: 0,
-        quoteOfTheDay: {
-          text: "Love is composed of a single soul inhabiting two bodies.",
-          author: "Aristotle"
-        }
-      });
 
-      await updateDoc(doc(db, 'users', user.uid), {
-        coupleId: coupleId
-      });
+      // Check if this couple already exists (someone might have joined already)
+      const coupleSnap = await getDoc(coupleRef);
+      
+      if (!coupleSnap.exists()) {
+        await setDoc(coupleRef, {
+          members: [user.uid, 'PARTNER_WAITING'],
+          createdAt: serverTimestamp(),
+          theme: 'default',
+          loveLetterDay: 0,
+          quoteOfTheDay: {
+            text: "Love is composed of a single soul inhabiting two bodies.",
+            author: "Aristotle"
+          }
+        });
+        
+        await updateDoc(doc(db, 'users', user.uid), {
+          coupleId: coupleId,
+          role: 'owner'
+        });
+      } else {
+        // Someone is trying to join an existing space
+        const data = coupleSnap.data();
+        if (data.members.includes('PARTNER_WAITING')) {
+           const newMembers = [data.members[0], user.uid];
+           await updateDoc(coupleRef, {
+             members: newMembers
+           });
+           await updateDoc(doc(db, 'users', user.uid), {
+             coupleId: coupleId,
+             role: 'member'
+           });
+           
+           // Also update the owner user to know their partner ID
+           await updateDoc(doc(db, 'users', data.members[0]), {
+             partnerId: user.uid
+           });
+           await updateDoc(doc(db, 'users', user.uid), {
+             partnerId: data.members[0]
+           });
+        } else {
+          setError("This space is already full.");
+        }
+      }
     } catch (e) {
-      setError("Linking failed. Check the code.");
+      setError("Linking failed. Error: " + (e as any).message);
     }
   };
 
@@ -179,6 +224,11 @@ export default function ProfileScreen() {
             </div>
           )}
           <p className="text-xs opacity-40 uppercase tracking-widest font-black leading-relaxed mt-1">{user?.email}</p>
+          {user?.role && (
+            <span className="inline-block mt-2 px-3 py-1 bg-brand/10 text-brand text-[10px] font-black uppercase tracking-widest rounded-full">
+              {user.role}
+            </span>
+          )}
         </div>
       </div>
 
@@ -193,8 +243,13 @@ export default function ProfileScreen() {
               <span className="text-[10px] font-black opacity-20 uppercase">Est. {couple?.createdAt?.toDate().toLocaleDateString()}</span>
             </div>
             <div className="flex flex-col space-y-4">
-               <div className="flex items-center space-x-4 p-4 bg-white/40 rounded-3xl relative group">
-                <img src={partner?.photoURL || ''} className="w-12 h-12 rounded-2xl object-cover" />
+               <div className="flex items-center space-x-6 p-6 bg-white/40 rounded-[32px] relative group border border-brand/5">
+                <div className="relative">
+                  <img src={partner?.photoURL || ''} className="w-16 h-16 rounded-[24px] object-cover shadow-lg border-2 border-white" />
+                  <div className="absolute -bottom-1 -right-1 bg-brand text-white p-1 rounded-lg">
+                    <Heart className="w-3 h-3 fill-current" />
+                  </div>
+                </div>
                 <div className="flex-1">
                   {isEditingNickname ? (
                     <div className="flex items-center space-x-2">
@@ -203,25 +258,28 @@ export default function ProfileScreen() {
                         value={newNickname}
                         onChange={e => setNewNickname(e.target.value)}
                         placeholder="Pet name..."
-                        className="bg-white/60 rounded-xl px-3 py-1 text-sm font-bold flex-1 outline-none"
+                        className="bg-white/60 rounded-xl px-3 py-2 text-sm font-bold flex-1 outline-none border border-brand/20 shadow-inner"
+                        onKeyDown={(e) => e.key === 'Enter' && updatePartnerNickname()}
                       />
-                      <button onClick={updatePartnerNickname} className="text-brand">
+                      <button onClick={updatePartnerNickname} className="p-2 bg-brand text-white rounded-xl shadow-lg active:scale-90 transition-all">
                         <Save className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center space-x-2">
-                      <p className="text-sm font-bold">
-                        {user?.nicknames?.[partner?.uid || ''] || partner?.displayName || 'Your Love'}
-                      </p>
-                      <button onClick={() => setIsEditingNickname(true)} className="opacity-0 group-hover:opacity-40 transition-opacity">
-                        <Edit3 className="w-3 h-3" />
+                    <div className="flex items-center space-x-3">
+                      <div className="space-y-0.5">
+                        <p className="text-xl font-serif font-bold text-brand leading-none">
+                          {user?.nicknames?.[partner?.uid || ''] || partner?.displayName || 'Your Love'}
+                        </p>
+                        <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-black">
+                          {partner?.displayName || 'Partner'}
+                        </p>
+                      </div>
+                      <button onClick={() => setIsEditingNickname(true)} className="p-1.5 bg-brand/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-brand/10">
+                        <Edit3 className="w-3.5 h-3.5 text-brand" />
                       </button>
                     </div>
                   )}
-                  <p className="text-[10px] opacity-40 uppercase tracking-tighter font-black">
-                    {partner?.displayName || 'Partner'}
-                  </p>
                 </div>
               </div>
             </div>

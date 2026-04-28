@@ -8,6 +8,7 @@ export interface UserProfile {
   partnerId?: string;
   coupleId?: string;
   lastSeen?: string;
+  role?: 'owner' | 'member';
   nicknames?: Record<string, string>;
 }
 
@@ -96,4 +97,33 @@ export interface WeeklyActivity {
   title: string;
   completed: boolean;
   weekOf: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+  addedBy: string;
+  caption?: string;
+  tags?: string[];
+  createdAt: any;
+}
+
+export interface PlaylistItem {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl?: string;
+  songUrl?: string;
+  addedBy: string;
+  createdAt: any;
+}
+
+export interface Activity {
+  id: string;
+  type: 'music' | 'gallery' | 'goal' | 'plan' | 'reflection' | 'status' | 'movie' | 'nickname';
+  userId: string;
+  content: string;
+  metadata?: any;
+  createdAt: any;
 }

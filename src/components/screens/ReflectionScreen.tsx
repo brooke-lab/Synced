@@ -4,6 +4,7 @@ import { Heart, Send, Ghost, Check, MessageSquareHeart, Eye, Lock, Unlock, Clock
 import { useAuth } from '../../lib/AuthContext';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, doc, updateDoc, where } from 'firebase/firestore';
+import { logActivity } from '../../lib/activityLogger';
 
 const INSTRUMENTALS = [
   'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
@@ -80,6 +81,15 @@ export default function ReflectionScreen() {
       status: 'unread',
       createdAt: serverTimestamp()
     });
+
+    await logActivity(
+      couple.id,
+      user?.uid || '',
+      'reflection',
+      `sealed a new love letter for ${currentWeek}`,
+      { currentWeek }
+    );
+
     setContent('');
     setIsTyping(false);
   };

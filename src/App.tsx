@@ -10,7 +10,9 @@ import GoalsScreen from './components/screens/GoalsScreen';
 import ReflectionScreen from './components/screens/ReflectionScreen';
 import ProfileScreen from './components/screens/ProfileScreen';
 import GalleryScreen from './components/screens/GalleryScreen';
+import ActivityScreen from './components/screens/ActivityScreen';
 import { THEMES } from './constants';
+import { Clock } from 'lucide-react';
 
 export default function App() {
   const { user, loading, couple } = useAuth();
@@ -72,6 +74,7 @@ export default function App() {
       case 'reflection': return <ReflectionScreen />;
       case 'gallery': return <GalleryScreen />;
       case 'profile': return <ProfileScreen />;
+      case 'activity': return <ActivityScreen />;
       default: return <HomeScreen />;
     }
   };
@@ -95,24 +98,17 @@ export default function App() {
 
       <nav className="fixed bottom-6 left-6 right-6 h-18 glass rounded-full flex items-center justify-around px-2 z-50">
         <NavButton icon={Home} active={activeTab === 'home'} onClick={() => setActiveTab('home')} label="Home" />
-        <NavButton icon={Calendar} active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} label="Plans" />
-        <div className="relative -top-4">
+        <NavButton icon={Clock} active={activeTab === 'activity'} onClick={() => setActiveTab('activity')} label="Activity" />
+        <div className="relative -top-3">
           <button 
-            onClick={() => setActiveTab('home')}
-            className="w-14 h-14 bg-brand rounded-2xl shadow-xl shadow-brand/20 flex items-center justify-center text-white active:scale-90 transition-all border-4 border-bg-app"
+            onClick={() => setActiveTab('gallery')}
+            className="w-14 h-14 bg-brand rounded-2xl shadow-xl shadow-brand/20 flex items-center justify-center text-white active:scale-95 transition-all border-4 border-[#FAF7F2]"
           >
-            <Heart className="w-6 h-6 fill-white/20" />
+            <Image className="w-6 h-6" />
           </button>
         </div>
         <NavButton icon={Heart} active={activeTab === 'reflection'} onClick={() => setActiveTab('reflection')} label="Feelings" />
         <NavButton icon={User} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} label="Profile" />
-        <button
-          onClick={() => setActiveTab('gallery')}
-          className={`flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${activeTab === 'gallery' ? 'text-brand scale-110' : 'text-gray-400 hover:text-gray-600'}`}
-        >
-          <Image className="w-4 h-4" />
-          <span className="text-[9px] font-medium">Gallery</span>
-        </button>
       </nav>
     </div>
   );
@@ -122,16 +118,20 @@ function NavButton({ icon: Icon, active, onClick, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex flex-col items-center justify-center space-y-1 transition-all duration-300 ${active ? 'text-brand scale-110' : 'text-gray-400 hover:text-gray-600'}`}
+      className={`relative flex flex-col items-center justify-center space-y-1.5 transition-all duration-300 ${active ? 'text-brand' : 'text-gray-400 hover:text-gray-600'}`}
     >
-      <Icon className="w-5 h-5" />
+      <div className={`p-2 rounded-xl transition-all ${active ? 'bg-brand/10 shadow-inner' : 'bg-transparent'}`}>
+        <Icon className={`w-5 h-5 ${active ? 'stroke-[2.5px]' : 'stroke-[1.5px]'}`} />
+      </div>
       {active && (
         <motion.div
           layoutId="active-indicator"
-          className="absolute -top-1 w-1 h-1 bg-brand rounded-full"
+          className="absolute -bottom-1 w-4 h-0.5 bg-brand rounded-full"
         />
       )}
-      <span className="text-[10px] font-medium hidden xs:block">{label}</span>
+      <span className={`text-[9px] font-mono uppercase tracking-tighter hidden xs:block ${active ? 'font-bold opacity-100' : 'opacity-40'}`}>
+        {label}
+      </span>
     </button>
   );
 }

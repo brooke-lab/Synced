@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 interface AuthContextType {
@@ -32,6 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Listen to user profile for coupleId
       const userDocRef = doc(db, 'users', u.uid);
+      
+      // Ensure user document exists with basic info
+      const userSnap = await getDoc(userDocRef);
+      if (!userSnap.exists()) {
+        await setDoc(userDocRef, {
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName || 'User',
+          photoURL: u.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.uid}`,
+          role: 'member', // Default to member, link creator will be owner
+          nicknames: {},
+          createdAt: serverTimestamp()
+        });
+      }
+
       const unsubUser = onSnapshot(userDocRef, (snap) => {
         const userData = snap.data();
         // Merge metadata from auth

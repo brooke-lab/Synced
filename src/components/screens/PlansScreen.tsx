@@ -5,6 +5,7 @@ import { useAuth } from '../../lib/AuthContext';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { GoogleGenAI } from "@google/genai";
+import { logActivity } from '../../lib/activityLogger';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -80,22 +81,52 @@ export default function PlansScreen() {
       watched: false,
       createdAt: serverTimestamp()
     });
+
+    await logActivity(
+      couple.id,
+      user?.uid || '',
+      'movie',
+      `added "${movie.title}" to the watchlist 🍿`,
+      { movieTitle: movie.title, posterUrl: movie.posterUrl }
+    );
+
     setMovieResults([]);
     setMovieSearch('');
   };
 
   const toggleMovieWatched = async (movie: any) => {
+    if (!couple?.id) return;
     const movieRef = doc(db, 'couples', couple.id, 'movies', movie.id);
-    await updateDoc(movieRef, { watched: !movie.watched });
+    const newStatus = !movie.watched;
+    await updateDoc(movieRef, { watched: newStatus });
+
+    if (newStatus) {
+      await logActivity(
+        couple.id,
+        user?.uid || '',
+        'movie',
+        `watched "${movie.title}" 🎬`,
+        { movieTitle: movie.title, posterUrl: movie.posterUrl }
+      );
+    }
   };
 
   const addPlan = async () => {
-    if (!newPlan.title || !newPlan.date) return;
+    if (!newPlan.title || !newPlan.date || !couple?.id) return;
     await addDoc(collection(db, 'couples', couple.id, 'plans'), {
       ...newPlan,
       coupleId: couple.id,
       createdAt: serverTimestamp()
     });
+
+    await logActivity(
+      couple.id,
+      user?.uid || '',
+      'plan',
+      `planned a new ${newPlan.type}: "${newPlan.title}" on ${new Date(newPlan.date).toLocaleDateString()}`,
+      { planTitle: newPlan.title, planDate: newPlan.date, planType: newPlan.type }
+    );
+
     setIsAdding(false);
     setNewPlan({ title: '', date: '', type: 'date' });
   };
