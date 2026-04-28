@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information and status.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "status": { "type": "string" },
+        "statusEmoji": { "type": "string" },
+        "partnerId": { "type": "string", "description": "UID of the linked partner." },
+        "coupleId": { "type": "string", "description": "ID of the shared couple document." },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Couple": {
+      "title": "Couple",
+      "description": "Shared space settings and state for a couple.",
+      "type": "object",
+      "properties": {
+        "members": { "type": "array", "items": { "type": "string" } },
+        "anniversary": { "type": "string", "format": "date" },
+        "quoteOfTheDay": { "type": "object", "properties": {
+          "text": { "type": "string" },
+          "author": { "type": "string" }
+        }},
+        "theme": { "type": "string" }
+      },
+      "required": ["members"]
+    },
+    "MusicDedication": {
+      "title": "Music Dedication",
+      "description": "A song dedicated to the partner.",
+      "type": "object",
+      "properties": {
+        "fromId": { "type": "string" },
+        "toId": { "type": "string" },
+        "songTitle": { "type": "string" },
+        "artist": { "type": "string" },
+        "coverUrl": { "type": "string" },
+        "spotifyUrl": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromId", "songTitle", "artist"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A shared or individual goal.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["shared", "individual"] },
+        "ownerId": { "type": "string" },
+        "coupleId": { "type": "string" },
+        "progress": { "type": "number" },
+        "deadline": { "type": "string", "format": "date" },
+        "completed": { "type": "boolean" }
+      },
+      "required": ["title", "type", "coupleId"]
+    },
+    "Plan": {
+      "title": "Plan",
+      "description": "A scheduled date or event.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["date", "event", "occasion"] },
+        "coupleId": { "type": "string" }
+      },
+      "required": ["title", "date", "coupleId"]
+    },
+    "Reflection": {
+      "title": "Reflection",
+      "description": "Private feelings shared for later response.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "coupleId": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string", "enum": ["unread", "read", "responded"] },
+        "response": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "coupleId", "content"]
+    },
+    "VisionBoardPin": {
+      "title": "Vision Board Pin",
+      "description": "An image or note on a vision board.",
+      "type": "object",
+      "properties": {
+        "coupleId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "boardType": { "type": "string", "enum": ["shared", "individual"] },
+        "imageUrl": { "type": "string" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["coupleId", "boardType"]
+    },
+    "WeeklyActivity": {
+      "title": "Weekly Activity",
+      "description": "A selected activity for the week.",
+      "type": "object",
+      "properties": {
+        "coupleId": { "type": "string" },
+        "title": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "weekOf": { "type": "string", "format": "date" }
+      },
+      "required": ["coupleId", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles."
+    },
+    "/couples/{coupleId}": {
+      "schema": "Couple",
+      "description": "Shared couple data."
+    },
+    "/couples/{coupleId}/musicDedications/{dedicationId}": {
+      "schema": "MusicDedication",
+      "description": "Song dedications for a couple."
+    },
+    "/couples/{coupleId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Goals for the couple or individuals."
+    },
+    "/couples/{coupleId}/plans/{planId}": {
+      "schema": "Plan",
+      "description": "Shared calendar/plans."
+    },
+    "/couples/{coupleId}/reflections/{reflectionId}": {
+      "schema": "Reflection",
+      "description": "Private reflection space."
+    },
+    "/couples/{coupleId}/visionBoard/{pinId}": {
+      "schema": "VisionBoardPin",
+      "description": "Vision board pins."
+    },
+    "/couples/{coupleId}/weeklyActivities/{activityId}": {
+      "schema": "WeeklyActivity",
+      "description": "Activities for the week."
+    }
+  }
+}
