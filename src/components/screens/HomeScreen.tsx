@@ -124,7 +124,7 @@ export default function HomeScreen() {
           </div>
           <button
             onClick={shuffleActivity}
-            className="text-[10px] font-mono font-black uppercase tracking-widest text-brand bg-brand/5 hover:bg-brand/10 px-4 py-2 rounded-xl transition-all active:scale-95 border border-brand/10"
+            className="btn-primary text-[10px] font-mono font-black uppercase tracking-widest text-brand bg-brand/5 hover:bg-brand/10 px-4 py-2 rounded-xl transition-all border border-brand/10"
           >
             [ RE-ROUTE ]
           </button>

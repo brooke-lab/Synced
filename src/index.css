@@ -40,10 +40,39 @@
 }
 
 .lofi-gradient {
-  background: radial-gradient(circle at 10% 20%, var(--brand-soft, #FFF5F7) 0%, transparent 40%),
+  background: var(--bg-gradient, radial-gradient(circle at 10% 20%, var(--brand-soft, #FFF5F7) 0%, transparent 40%),
               radial-gradient(circle at 90% 80%, #F5F7FF 0%, transparent 40%),
               radial-gradient(circle at 80% 10%, #FFF9F2 0%, transparent 40%),
-              radial-gradient(circle at 20% 90%, #F2FFF7 0%, transparent 40%);
+              radial-gradient(circle at 20% 90%, #F2FFF7 0%, transparent 40%));
+}
+
+.btn-primary {
+  @apply transition-all duration-300 active:scale-95 cursor-pointer;
+}
+
+/* Theme-specific UI Enhancements */
+[data-theme="pink"] .btn-primary {
+  @apply shadow-[0_8px_20px_rgba(244,114,182,0.3)] hover:shadow-[0_12px_28px_rgba(244,114,182,0.4)];
+}
+
+[data-theme="blue"] .btn-primary {
+  @apply shadow-[0_8px_20px_rgba(96,165,250,0.3)] hover:shadow-[0_12px_28px_rgba(96,165,250,0.4)];
+}
+
+[data-theme="green"] .btn-primary {
+  @apply shadow-[0_8px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_12px_28px_rgba(16,185,129,0.4)];
+}
+
+[data-theme="sunset"] .btn-primary {
+  @apply shadow-[0_8px_20px_rgba(251,146,60,0.3)] hover:shadow-[0_12px_28px_rgba(251,146,60,0.4)];
+}
+
+[data-theme="minimal"] .btn-primary {
+  @apply shadow-none border-2 border-black hover:bg-black hover:text-white;
+}
+
+[data-theme="minimal"] .glass {
+  @apply bg-white border border-gray-100 shadow-none;
 }
 
 .dotted-grid {

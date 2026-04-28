@@ -321,7 +321,7 @@ export default function ProfileScreen() {
                 />
                 <button
                   onClick={coupleLink}
-                  className="px-6 bg-[#4A4440] text-white rounded-3xl text-sm font-bold shadow-lg"
+                  className="btn-primary px-6 bg-[#4A4440] text-white rounded-3xl text-sm font-bold shadow-lg"
                 >
                   Join
                 </button>
@@ -365,7 +365,7 @@ export default function ProfileScreen() {
                     updateDoc(doc(db, 'couples', couple.id), { theme: t.id });
                   }
                 }}
-                className={`flex items-center space-x-3 p-3 glass rounded-2xl transition-all ${couple?.theme === t.id ? 'ring-2 ring-brand' : ''}`}
+                className={`btn-primary flex items-center space-x-3 p-3 glass rounded-2xl transition-all ${couple?.theme === t.id ? 'ring-2 ring-brand' : ''}`}
               >
                 <div className="w-8 h-8 rounded-xl shadow-inner" style={{ backgroundColor: t.brand }} />
                 <span className="text-xs font-bold">{t.name}</span>

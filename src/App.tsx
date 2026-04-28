@@ -26,6 +26,8 @@ export default function App() {
       root.style.setProperty('--brand-soft', selectedTheme.soft);
       root.style.setProperty('--bg-color', selectedTheme.bg);
       root.style.setProperty('--text-color', selectedTheme.text);
+      root.style.setProperty('--bg-gradient', selectedTheme.gradient);
+      root.setAttribute('data-theme', selectedTheme.id);
     }
   }, [couple?.theme]);
 
@@ -56,7 +58,7 @@ export default function App() {
           <p className="text-sm opacity-70">To begin your journey, link with your partner in the profile section.</p>
           <button
             onClick={() => setActiveTab('profile')}
-            className="w-full py-3 bg-brand-soft text-brand rounded-2xl hover:bg-opacity-80 transition-colors font-medium border border-brand/10"
+            className="btn-primary w-full py-3 bg-brand-soft text-brand rounded-2xl hover:bg-opacity-80 transition-colors font-medium border border-brand/10"
           >
             Go to Profile
           </button>
