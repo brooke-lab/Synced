@@ -78,12 +78,12 @@ export default function MusicScreen() {
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && searchSongs()}
           placeholder="Search for a song..."
-          className="w-full pl-12 pr-4 py-4 glass rounded-3xl outline-none focus:ring-2 ring-pink-200 transition-all text-sm"
+          className="w-full pl-12 pr-4 py-4 glass rounded-3xl outline-none focus:ring-2 ring-brand/20 transition-all text-sm"
         />
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-30" />
         {isSearching && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -145,7 +145,7 @@ export default function MusicScreen() {
               </button>
               <button
                 onClick={dedicateSong}
-                className="flex-1 py-4 bg-pink-400 text-white rounded-2xl text-sm font-bold shadow-lg shadow-pink-100 flex items-center justify-center space-x-2"
+                className="flex-1 py-4 bg-brand text-white rounded-2xl text-sm font-bold shadow-lg shadow-brand/20 flex items-center justify-center space-x-2"
               >
                 <Send className="w-4 h-4" />
                 <span>Dedicate</span>
@@ -162,7 +162,7 @@ export default function MusicScreen() {
           <h2 className="text-xs uppercase tracking-widest font-bold">Timeline</h2>
         </div>
         <div className="space-y-6 relative ml-4">
-          <div className="absolute left-0 top-0 bottom-0 w-px bg-pink-100" />
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-brand-soft" />
           {dedications.map((dedication, i) => (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
@@ -171,7 +171,7 @@ export default function MusicScreen() {
               key={dedication.id}
               className="relative pl-8"
             >
-              <div className="absolute left-[-4px] top-6 w-2 h-2 rounded-full bg-pink-300" />
+              <div className="absolute left-[-4px] top-6 w-2 h-2 rounded-full bg-brand" />
               <div className="glass p-6 rounded-[32px] space-y-4">
                 <div className="flex items-center space-x-4">
                   <img src={dedication.coverUrl} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
@@ -181,7 +181,7 @@ export default function MusicScreen() {
                   </div>
                 </div>
                 {dedication.message && (
-                  <p className="text-sm italic opacity-70 border-l-2 border-pink-100 pl-3">
+                  <p className="text-sm italic opacity-70 border-l-2 border-brand/20 pl-3">
                     "{dedication.message}"
                   </p>
                 )}

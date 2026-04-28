@@ -8,6 +8,7 @@ export interface UserProfile {
   partnerId?: string;
   coupleId?: string;
   lastSeen?: string;
+  nicknames?: Record<string, string>;
 }
 
 export interface Couple {
@@ -15,6 +16,7 @@ export interface Couple {
   members: string[];
   anniversary?: string;
   anniversaryMessage?: string;
+  loveLetterDay?: number; // 0-6 (Sunday-Saturday)
   quoteOfTheDay?: {
     text: string;
     author: string;
@@ -60,7 +62,9 @@ export interface Reflection {
   authorId: string;
   coupleId: string;
   content: string;
+  weekOf: string; // YYYY-WW format
   status: 'unread' | 'read' | 'responded';
+  isFavorited?: boolean;
   response?: string;
   createdAt: any;
 }
@@ -72,6 +76,17 @@ export interface VisionBoardPin {
   boardType: 'shared' | 'individual';
   imageUrl: string;
   note?: string;
+  createdAt: any;
+}
+
+export interface Movie {
+  id: string;
+  title: string;
+  posterUrl?: string;
+  year?: string;
+  coupleId: string;
+  addedBy: string;
+  watched: boolean;
   createdAt: any;
 }
 

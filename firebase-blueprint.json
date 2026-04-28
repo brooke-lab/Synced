@@ -13,7 +13,12 @@
         "statusEmoji": { "type": "string" },
         "partnerId": { "type": "string", "description": "UID of the linked partner." },
         "coupleId": { "type": "string", "description": "ID of the shared couple document." },
-        "lastSeen": { "type": "string", "format": "date-time" }
+        "lastSeen": { "type": "string", "format": "date-time" },
+        "nicknames": { 
+          "type": "object", 
+          "additionalProperties": { "type": "string" },
+          "description": "UID mapping to nicknames set by that user."
+        }
       },
       "required": ["uid", "email"]
     },
@@ -24,6 +29,7 @@
       "properties": {
         "members": { "type": "array", "items": { "type": "string" } },
         "anniversary": { "type": "string", "format": "date" },
+        "loveLetterDay": { "type": "integer", "minimum": 0, "maximum": 6, "description": "Day of week for reveal." },
         "quoteOfTheDay": { "type": "object", "properties": {
           "text": { "type": "string" },
           "author": { "type": "string" }
@@ -79,17 +85,19 @@
     },
     "Reflection": {
       "title": "Reflection",
-      "description": "Private feelings shared for later response.",
+      "description": "Weekly love letters shared on a specific day.",
       "type": "object",
       "properties": {
         "authorId": { "type": "string" },
         "coupleId": { "type": "string" },
         "content": { "type": "string" },
+        "weekOf": { "type": "string", "description": "Year and Week identifier." },
         "status": { "type": "string", "enum": ["unread", "read", "responded"] },
+        "isFavorited": { "type": "boolean" },
         "response": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["authorId", "coupleId", "content"]
+      "required": ["authorId", "coupleId", "content", "weekOf"]
     },
     "VisionBoardPin": {
       "title": "Vision Board Pin",
@@ -116,6 +124,33 @@
         "weekOf": { "type": "string", "format": "date" }
       },
       "required": ["coupleId", "title"]
+    },
+    "Movie": {
+      "title": "Movie",
+      "description": "A movie for the couple's watchlist.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "posterUrl": { "type": "string" },
+        "year": { "type": "string" },
+        "coupleId": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "watched": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "coupleId"]
+    },
+    "GalleryItem": {
+      "title": "Gallery Item",
+      "description": "A shared photo or video in the memory gallery.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "video"] },
+        "addedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["url", "type", "addedBy"]
     }
   },
   "firestore": {
@@ -150,6 +185,14 @@
     "/couples/{coupleId}/weeklyActivities/{activityId}": {
       "schema": "WeeklyActivity",
       "description": "Activities for the week."
+    },
+    "/couples/{coupleId}/movies/{movieId}": {
+      "schema": "Movie",
+      "description": "Movie watchlist."
+    },
+    "/couples/{coupleId}/gallery/{mediaId}": {
+      "schema": "GalleryItem",
+      "description": "Shared gallery of memories."
     }
   }
 }

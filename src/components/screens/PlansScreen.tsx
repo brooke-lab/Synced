@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Calendar as CalIcon, Plus, MapPin, Clock, Star, PartyPopper, Sparkles, Heart, Gift } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Calendar as CalIcon, Plus, MapPin, Clock, Star, PartyPopper, Sparkles, Heart, Gift, Film, Search, CheckCircle2, Circle } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { db } from '../../lib/firebase';
-import { collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc, orderBy } from 'firebase/firestore';
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function PlansScreen() {
   const { user, couple } = useAuth();
-  const [activeView, setActiveView] = useState<'calendar' | 'vision'>('calendar');
+  const [activeView, setActiveView] = useState<'calendar' | 'vision' | 'movies'>('calendar');
   const [plans, setPlans] = useState<any[]>([]);
   const [pins, setPins] = useState<any[]>([]);
+  const [movies, setMovies] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newPlan, setNewPlan] = useState({ title: '', date: '', type: 'date' });
   const [isEditingAnniversary, setIsEditingAnniversary] = useState(false);
   const [anniversaryDate, setAnniversaryDate] = useState(couple?.anniversary || '');
   const [anniversaryMessage, setAnniversaryMessage] = useState(couple?.anniversaryMessage || '');
+
+  const [movieSearch, setMovieSearch] = useState('');
+  const [movieResults, setMovieResults] = useState<any[]>([]);
+  const [isSearchingMovies, setIsSearchingMovies] = useState(false);
 
   useEffect(() => {
     if (couple) {
@@ -35,8 +43,51 @@ export default function PlansScreen() {
       setPins(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    return () => { unsub(); unsubPins(); };
+    const qMovies = query(collection(db, 'couples', couple.id, 'movies'), orderBy('createdAt', 'desc'));
+    const unsubMovies = onSnapshot(qMovies, (snap) => {
+      setMovies(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => { unsub(); unsubPins(); unsubMovies(); };
   }, [couple?.id]);
+
+  const searchMovies = async () => {
+    if (!movieSearch.trim()) return;
+    setIsSearchingMovies(true);
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Search for movies matching: "${movieSearch}". Return a JSON array of 5 movies with: title, year, posterUrl (use professional movie poster links or aesthetic unsplash movie-themed urls), and summary.`,
+        config: { responseMimeType: "application/json" }
+      });
+      const data = JSON.parse(response.text);
+      setMovieResults(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSearchingMovies(false);
+    }
+  };
+
+  const addMovie = async (movie: any) => {
+    if (!couple?.id) return;
+    await addDoc(collection(db, 'couples', couple.id, 'movies'), {
+      title: movie.title,
+      year: movie.year,
+      posterUrl: movie.posterUrl,
+      coupleId: couple.id,
+      addedBy: user?.uid,
+      watched: false,
+      createdAt: serverTimestamp()
+    });
+    setMovieResults([]);
+    setMovieSearch('');
+  };
+
+  const toggleMovieWatched = async (movie: any) => {
+    const movieRef = doc(db, 'couples', couple.id, 'movies', movie.id);
+    await updateDoc(movieRef, { watched: !movie.watched });
+  };
 
   const addPlan = async () => {
     if (!newPlan.title || !newPlan.date) return;
@@ -95,39 +146,44 @@ export default function PlansScreen() {
     <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-[#4A4440]">{activeView === 'calendar' ? 'Our Plans' : 'Vision Board'}</h1>
-          <p className="text-sm opacity-50 italic">{activeView === 'calendar' ? 'Making memories' : 'Dreaming together'}</p>
+          <h1 className="text-3xl font-serif font-bold text-[#4A4440]">
+            {activeView === 'calendar' ? 'Our Plans' : activeView === 'vision' ? 'Vision Board' : 'Watchlist'}
+          </h1>
+          <p className="text-sm opacity-50 italic">
+            {activeView === 'calendar' ? 'Making memories' : activeView === 'vision' ? 'Dreaming together' : 'Movies to watch'}
+          </p>
         </div>
         <div className="flex space-x-2">
-          <button
-            onClick={() => setActiveView(activeView === 'calendar' ? 'vision' : 'calendar')}
-            className="p-3 glass rounded-2xl text-pink-400"
-          >
-            {activeView === 'calendar' ? <Sparkles className="w-6 h-6" /> : <CalIcon className="w-6 h-6" />}
-          </button>
-          <button
-            onClick={() => activeView === 'calendar' ? setIsAdding(true) : addPin()}
-            className="p-3 bg-[#4A4440] rounded-2xl shadow-sm text-white hover:scale-110 active:scale-95 transition-all"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
+          <div className="flex bg-white/40 glass p-1 rounded-2xl">
+            <TabIcon active={activeView === 'calendar'} onClick={() => setActiveView('calendar')} Icon={CalIcon} />
+            <TabIcon active={activeView === 'vision'} onClick={() => setActiveView('vision')} Icon={Sparkles} />
+            <TabIcon active={activeView === 'movies'} onClick={() => setActiveView('movies')} Icon={Film} />
+          </div>
+          {activeView !== 'movies' && (
+            <button
+              onClick={() => activeView === 'calendar' ? setIsAdding(true) : addPin()}
+              className="p-3 bg-[#4A4440] rounded-2xl shadow-sm text-white hover:scale-110 active:scale-95 transition-all"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          )}
         </div>
       </div>
 
       {activeView === 'calendar' && (
-        <section className={`p-6 rounded-[40px] space-y-6 relative overflow-hidden transition-all duration-500 ${couple?.anniversary ? 'glass shadow-xl shadow-pink-100/20' : 'bg-pink-50 border-2 border-dashed border-pink-200 animate-pulse-slow'}`}>
+        <section className={`p-6 rounded-[40px] space-y-6 relative overflow-hidden transition-all duration-500 ${couple?.anniversary ? 'glass shadow-xl shadow-brand/20' : 'bg-brand-soft border-2 border-dashed border-brand/20 animate-pulse-slow'}`}>
           <div className="absolute -right-4 -top-4 opacity-5 rotate-12">
             <Gift className="w-24 h-24" />
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <PartyPopper className={`w-4 h-4 ${couple?.anniversary ? 'text-pink-400' : 'text-pink-300'}`} />
+              <PartyPopper className={`w-4 h-4 ${couple?.anniversary ? 'text-brand' : 'opacity-40'}`} />
               <h3 className="text-sm font-bold opacity-80">Anniversary</h3>
             </div>
             {!isEditingAnniversary ? (
               <button 
                 onClick={() => setIsEditingAnniversary(true)} 
-                className={`text-[10px] uppercase font-black tracking-widest px-3 py-1 rounded-full transition-all ${couple?.anniversary ? 'text-pink-500 bg-pink-50 hover:bg-pink-100' : 'text-white bg-pink-400 shadow-lg shadow-pink-200'}`}
+                className={`text-[10px] uppercase font-black tracking-widest px-3 py-1 rounded-full transition-all ${couple?.anniversary ? 'text-brand bg-brand-soft hover:bg-opacity-80' : 'text-white bg-brand shadow-lg shadow-brand/20'}`}
               >
                 {couple?.anniversary ? 'Update' : 'Set your date'}
               </button>
@@ -154,7 +210,7 @@ export default function PlansScreen() {
                       <p className="text-[10px] uppercase tracking-[0.2em] font-black opacity-30">Days left</p>
                     </div>
                     <div className="text-right space-y-1">
-                      <p className="text-lg font-serif font-bold text-pink-500">
+                      <p className="text-lg font-serif font-bold text-brand">
                         {new Date(couple.anniversary).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
                       </p>
                       <p className="text-[10px] opacity-40 italic">to celebrate your love</p>
@@ -167,7 +223,7 @@ export default function PlansScreen() {
                 )}
               </div>
               {couple?.anniversaryMessage && (
-                <div className="pt-4 border-t border-pink-100/30">
+                <div className="pt-4 border-t border-brand-soft">
                   <p className="text-sm italic text-[#5D544F] opacity-70">"{couple.anniversaryMessage}"</p>
                 </div>
               )}
@@ -194,7 +250,7 @@ export default function PlansScreen() {
               </div>
               <div className="flex justify-between items-center px-2">
                 <button onClick={() => setIsEditingAnniversary(false)} className="text-[10px] opacity-40 uppercase font-black tracking-widest">Cancel</button>
-                <div className="w-1 h-1 bg-pink-200 rounded-full" />
+                <div className="w-1 h-1 bg-brand-soft rounded-full" />
               </div>
             </div>
           )}
@@ -217,7 +273,7 @@ export default function PlansScreen() {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeView === 'vision' ? (
         <div className="columns-2 gap-4 space-y-4">
           {pins.map((pin) => (
             <motion.div
@@ -241,6 +297,80 @@ export default function PlansScreen() {
               Dreams start here. Add your first pin! ✨
             </div>
           )}
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {/* Movie Search */}
+          <div className="relative">
+            <input
+              value={movieSearch}
+              onChange={(e) => setMovieSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && searchMovies()}
+              placeholder="Suggest a movie..."
+              className="w-full pl-12 pr-4 py-4 glass rounded-3xl outline-none focus:ring-2 ring-brand/20 transition-all text-sm"
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-30" />
+            {isSearchingMovies && (
+              <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {movieResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid gap-3"
+              >
+                {movieResults.map((movie, i) => (
+                  <button
+                    key={i}
+                    onClick={() => addMovie(movie)}
+                    className="flex items-center p-3 glass rounded-2xl hover:bg-white/50 transition-colors text-left"
+                  >
+                    <img src={movie.posterUrl} className="w-12 h-18 rounded-lg object-cover mr-4" />
+                    <div className="flex-1">
+                      <p className="text-sm font-bold">{movie.title}</p>
+                      <p className="text-[10px] opacity-50">{movie.year} • {movie.summary?.substring(0, 40)}...</p>
+                    </div>
+                    <Plus className="w-4 h-4 opacity-30" />
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Watchlist */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 text-[10px] uppercase tracking-widest font-bold opacity-30 px-2 mt-4">
+              <Film className="w-3 h-3" />
+              <span>Watchlist</span>
+            </div>
+            <div className="grid gap-4">
+              {movies.map((movie) => (
+                <div key={movie.id} className={`glass p-4 rounded-[28px] flex items-center space-x-4 transition-all ${movie.watched ? 'opacity-40' : ''}`}>
+                  <button onClick={() => toggleMovieWatched(movie)} className="text-[#4A4440] hover:scale-110 active:scale-95 transition-all">
+                    {movie.watched ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6" />}
+                  </button>
+                  <img src={movie.posterUrl} className="w-10 h-14 rounded-lg object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${movie.watched ? 'line-through' : ''}`}>{movie.title}</p>
+                    <p className="text-[10px] opacity-40">{movie.year}</p>
+                  </div>
+                  <button onClick={() => deleteDoc(doc(db, 'couples', couple.id, 'movies', movie.id))} className="p-2 opacity-20 hover:opacity-100 transition-opacity">
+                    <Plus className="w-4 h-4 rotate-45" />
+                  </button>
+                </div>
+              ))}
+              {movies.length === 0 && (
+                <div className="py-20 text-center opacity-30 italic text-sm">
+                  The cinema is empty. Add some movies! 🍿
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -282,6 +412,17 @@ export default function PlansScreen() {
   );
 }
 
+function TabIcon({ active, onClick, Icon }: { active: boolean, onClick: () => void, Icon: any }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`p-2 rounded-xl transition-all ${active ? 'bg-white text-brand shadow-sm' : 'text-gray-400'}`}
+    >
+      <Icon className="w-5 h-5" />
+    </button>
+  );
+}
+
 function PlanCard({ plan, onDelete }: any) {
   const isDate = plan.type === 'date';
   const Icon = isDate ? Heart : plan.type === 'occasion' ? PartyPopper : Star;
@@ -293,7 +434,7 @@ function PlanCard({ plan, onDelete }: any) {
       className="glass p-5 rounded-[32px] flex items-center justify-between group"
     >
       <div className="flex items-center space-x-4">
-        <div className={`p-3 rounded-2xl ${isDate ? 'bg-pink-100 text-pink-500' : 'bg-blue-100 text-blue-500'}`}>
+        <div className={`p-3 rounded-2xl ${isDate ? 'bg-brand-soft text-brand' : 'bg-blue-100 text-blue-500'}`}>
           <Icon className="w-5 h-5" />
         </div>
         <div>

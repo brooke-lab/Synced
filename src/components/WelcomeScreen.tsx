@@ -6,9 +6,9 @@ export default function WelcomeScreen() {
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center p-8 lofi-gradient text-center overflow-hidden relative">
       {/* Decorative Floating Elements */}
-      <FloatingItem Icon={Music} delay={0} top="15%" left="15%" color="text-pink-200" />
+      <FloatingItem Icon={Music} delay={0} top="15%" left="15%" color="text-brand/20" />
       <FloatingItem Icon={Star} delay={1} top="75%" left="80%" color="text-yellow-200" />
-      <FloatingItem Icon={Heart} delay={0.5} top="20%" left="85%" color="text-red-100" />
+      <FloatingItem Icon={Heart} delay={0.5} top="20%" left="85%" color="text-brand/20" />
       <FloatingItem Icon={Sparkles} delay={1.5} top="80%" left="10%" color="text-purple-200" />
 
       <motion.div
@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
             className="w-24 h-24 bg-white rounded-[40%] flex items-center justify-center shadow-xl mb-4 mx-auto"
           >
-            <Heart className="w-12 h-12 text-pink-400 fill-pink-400" />
+            <Heart className="w-12 h-12 text-brand fill-brand/20" />
           </motion.div>
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}

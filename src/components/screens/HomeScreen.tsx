@@ -91,15 +91,15 @@ export default function HomeScreen() {
       </section>
 
       {/* Weekly Activity Shuffle */}
-      <section className="bg-white p-6 rounded-[40px] shadow-sm border border-pink-50 space-y-4">
+      <section className="bg-white p-6 rounded-[40px] shadow-sm border border-brand-soft space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Send className="w-4 h-4 text-pink-400 rotate-45" />
+            <Send className="w-4 h-4 text-brand rotate-45" />
             <h3 className="text-sm font-bold">Weekly Activity</h3>
           </div>
           <button
             onClick={shuffleActivity}
-            className="text-[10px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-3 py-1 rounded-full"
+            className="text-[10px] font-black uppercase tracking-widest text-brand bg-brand-soft px-3 py-1 rounded-full"
           >
             Shuffle
           </button>
@@ -111,7 +111,7 @@ export default function HomeScreen() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="p-4 bg-[#FAF7F2] rounded-3xl border border-pink-100/50"
+            className="p-4 bg-bg-app rounded-3xl border border-brand/10"
           >
             <p className="text-sm font-medium text-center italic">"{currentActivity}"</p>
           </motion.div>
@@ -120,7 +120,7 @@ export default function HomeScreen() {
 
       {/* Quick Interacts */}
       <div className="grid grid-cols-2 gap-4">
-        <Box title="Our Music" icon={Music} count="24 Songs" color="bg-pink-50" />
+        <Box title="Our Music" icon={Music} count="24 Songs" color="bg-brand-soft" />
         <Box title="Messages" icon={MessageCircle} count="2 Private" color="bg-blue-50" />
       </div>
 
@@ -160,16 +160,16 @@ function StatusCard({ isPartner, name, status, emoji, onClick }: any) {
     <motion.div
       whileTap={onClick ? { scale: 0.95 } : {}}
       onClick={onClick}
-      className={`p-4 rounded-3xl flex flex-col space-y-3 cursor-pointer transition-all ${isPartner ? 'glass' : 'bg-white shadow-sm border border-pink-100'}`}
+      className={`p-4 rounded-3xl flex flex-col space-y-3 cursor-pointer transition-all ${isPartner ? 'glass' : 'bg-white shadow-sm border border-brand-soft'}`}
     >
       <div className="flex justify-between items-center">
         <span className="text-[10px] uppercase tracking-wider font-bold opacity-40">{name}</span>
-        <span className="p-2 bg-[#FAF7F2] rounded-xl text-lg">{emoji}</span>
+        <span className="p-2 bg-bg-app rounded-xl text-lg">{emoji}</span>
       </div>
       <div className="space-y-1">
         <p className="text-sm font-semibold tracking-tight">{status}</p>
         <div className="flex items-center space-x-1">
-          <div className={`w-1.5 h-1.5 rounded-full ${isPartner ? 'bg-green-400 animate-pulse' : 'bg-pink-400'}`} />
+          <div className={`w-1.5 h-1.5 rounded-full ${isPartner ? 'bg-green-400 animate-pulse' : 'bg-brand'}`} />
           <span className="text-[10px] opacity-40">{isPartner ? 'Live' : 'Active now'}</span>
         </div>
       </div>

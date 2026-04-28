@@ -39,7 +39,7 @@ service cloud.firestore {
                      isValidUser(incoming());
       allow update: if isSignedIn() && request.auth.uid == userId && 
                      isValidUser(incoming()) &&
-                     incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'status', 'statusEmoji', 'partnerId', 'coupleId', 'lastSeen']);
+                     incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'status', 'statusEmoji', 'partnerId', 'coupleId', 'lastSeen', 'nicknames']);
     }
 
     function isValidUser(data) {
@@ -47,7 +47,8 @@ service cloud.firestore {
              data.email is string && data.email.size() <= 100 &&
              (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 50)) &&
              (!('status' in data) || (data.status is string && data.status.size() <= 100)) &&
-             (!('statusEmoji' in data) || (data.statusEmoji is string && data.statusEmoji.size() <= 10));
+             (!('statusEmoji' in data) || (data.statusEmoji is string && data.statusEmoji.size() <= 10)) &&
+             (!('nicknames' in data) || (data.nicknames is map));
     }
 
     // --- Couples ---
@@ -56,15 +57,22 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.auth.uid in incoming().members && incoming().members.size() <= 2;
       allow update: if isSignedIn() && request.auth.uid in existing().members &&
                      incoming().members == existing().members &&
-                     incoming().diff(existing()).affectedKeys().hasOnly(['anniversary', 'quoteOfTheDay', 'theme']);
+                     incoming().diff(existing()).affectedKeys().hasOnly(['anniversary', 'quoteOfTheDay', 'theme', 'loveLetterDay']);
     }
 
     // --- Sub-collections under Couples ---
     match /couples/{coupleId}/{collection}/{docId} {
       allow read, write: if isMemberOfCouple(coupleId);
-      
-      // We should probably harden these further, but for a prototype, this is the Master Gate.
-      // Let's add refinement for Reflections to ensure only owner or partner can read/write.
+    }
+
+    match /couples/{coupleId}/movies/{movieId} {
+      allow read, write: if isMemberOfCouple(coupleId);
+    }
+
+    match /couples/{coupleId}/gallery/{mediaId} {
+      allow read: if isMemberOfCouple(coupleId);
+      allow create: if isMemberOfCouple(coupleId) && request.resource.data.addedBy == request.auth.uid;
+      allow delete: if isMemberOfCouple(coupleId) && (resource.data.addedBy == request.auth.uid);
     }
 
     match /couples/{coupleId}/reflections/{reflectionId} {
@@ -72,10 +80,10 @@ service cloud.firestore {
       allow create: if isMemberOfCouple(coupleId) && incoming().authorId == request.auth.uid;
       allow update: if isMemberOfCouple(coupleId) && 
                     (
-                      // Author can update content
-                      (existing().authorId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['content'])) ||
-                      // Partner can update status/response
-                      (existing().authorId != request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'response']))
+                      // Author can update content or isFavorited
+                      (existing().authorId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['content', 'isFavorited'])) ||
+                      // Partner can update status/response or isFavorited
+                      (existing().authorId != request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'response', 'isFavorited']))
                     );
     }
   }

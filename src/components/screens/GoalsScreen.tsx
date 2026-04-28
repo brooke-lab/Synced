@@ -97,8 +97,8 @@ function Section({ title, goals, onToggle, icon: Icon }: any) {
       </div>
       <div className="space-y-3">
         {goals.map((goal: any) => (
-          <div key={goal.id} className={`glass p-5 rounded-[28px] flex items-center space-x-4 transition-all ${goal.completed ? 'opacity-40' : ''}`}>
-            <button onClick={() => onToggle(goal)} className="text-[#4A4440] hover:scale-110 active:scale-95 transition-all">
+          <div className={`glass p-5 rounded-[28px] flex items-center space-x-4 transition-all ${goal.completed ? 'opacity-40' : ''}`}>
+            <button onClick={() => onToggle(goal)} className="text-text-main hover:scale-110 active:scale-95 transition-all">
               {goal.completed ? <CheckCircle2 className="w-6 h-6 text-green-500" /> : <Circle className="w-6 h-6" />}
             </button>
             <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ function Section({ title, goals, onToggle, icon: Icon }: any) {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${goal.progress}%` }}
-                  className="h-full bg-green-400"
+                  className="h-full bg-brand"
                 />
               </div>
             </div>
@@ -123,7 +123,7 @@ function FilterBtn({ active, onClick, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${active ? 'bg-pink-100 text-pink-600' : 'bg-white/30 text-gray-400'}`}
+      className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${active ? 'bg-brand-soft text-brand' : 'bg-white/30 text-gray-400'}`}
     >
       {label}
     </button>
