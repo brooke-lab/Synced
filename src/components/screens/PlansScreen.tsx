@@ -174,18 +174,19 @@ export default function PlansScreen() {
   const daysToAnniversary = getCountdown(couple?.anniversary);
 
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
+    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-[#4A4440]">
-            {activeView === 'calendar' ? 'Our Plans' : activeView === 'vision' ? 'Vision Board' : 'Watchlist'}
+          <h1 className="text-4xl font-display font-black text-[#4A4440] uppercase tracking-tighter">
+            {activeView === 'calendar' ? 'Tactical Plans' : activeView === 'vision' ? 'Dream Spec' : 'Watchlist'}
           </h1>
-          <p className="text-sm opacity-50 italic">
-            {activeView === 'calendar' ? 'Making memories' : activeView === 'vision' ? 'Dreaming together' : 'Movies to watch'}
-          </p>
+          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
+            <span className="w-2 h-2 bg-brand animate-pulse" />
+            <span className="uppercase">{activeView === 'calendar' ? 'Planning_v4.1' : activeView === 'vision' ? 'Neuro_Link_v0.9' : 'Visual_Module_v2.0'}</span>
+          </div>
         </div>
         <div className="flex space-x-2">
-          <div className="flex bg-white/40 glass p-1 rounded-2xl">
+          <div className="flex bg-black/5 p-1 rounded-2xl border border-black/5">
             <TabIcon active={activeView === 'calendar'} onClick={() => setActiveView('calendar')} Icon={CalIcon} />
             <TabIcon active={activeView === 'vision'} onClick={() => setActiveView('vision')} Icon={Sparkles} />
             <TabIcon active={activeView === 'movies'} onClick={() => setActiveView('movies')} Icon={Film} />
@@ -193,7 +194,7 @@ export default function PlansScreen() {
           {activeView !== 'movies' && (
             <button
               onClick={() => activeView === 'calendar' ? setIsAdding(true) : addPin()}
-              className="p-3 bg-[#4A4440] rounded-2xl shadow-sm text-white hover:scale-110 active:scale-95 transition-all"
+              className="btn-primary p-3 bg-brand rounded-2xl shadow-lg shadow-brand/20 text-white"
             >
               <Plus className="w-6 h-6" />
             </button>
@@ -202,25 +203,25 @@ export default function PlansScreen() {
       </div>
 
       {activeView === 'calendar' && (
-        <section className={`p-6 rounded-[40px] space-y-6 relative overflow-hidden transition-all duration-500 ${couple?.anniversary ? 'glass shadow-xl shadow-brand/20' : 'bg-brand-soft border-2 border-dashed border-brand/20 animate-pulse-slow'}`}>
-          <div className="absolute -right-4 -top-4 opacity-5 rotate-12">
+        <section className={`p-8 rounded-[40px] space-y-6 relative overflow-hidden transition-all duration-500 tech-border ${couple?.anniversary ? 'glass shadow-sm' : 'bg-black/5 border-dashed border-2 border-black/10 animate-pulse-slow'}`}>
+          <div className="absolute -right-6 -top-6 opacity-5 rotate-12">
             <Gift className="w-24 h-24" />
           </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <PartyPopper className={`w-4 h-4 ${couple?.anniversary ? 'text-brand' : 'opacity-40'}`} />
-              <h3 className="text-sm font-bold opacity-80">Anniversary</h3>
+              <PartyPopper className={`w-4 h-4 ${couple?.anniversary ? 'text-brand shadow-[0_0_8px_rgba(244,114,182,0.5)]' : 'opacity-40'}`} />
+              <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold opacity-40">System_Event // Anniversary</h3>
             </div>
             {!isEditingAnniversary ? (
               <button 
                 onClick={() => setIsEditingAnniversary(true)} 
-                className={`text-[10px] uppercase font-black tracking-widest px-3 py-1 rounded-full transition-all ${couple?.anniversary ? 'text-brand bg-brand-soft hover:bg-opacity-80' : 'text-white bg-brand shadow-lg shadow-brand/20'}`}
+                className="btn-primary text-[10px] font-mono font-black uppercase tracking-widest px-4 py-2 bg-brand/5 border border-brand/10 text-brand rounded-xl"
               >
-                {couple?.anniversary ? 'Update' : 'Set your date'}
+                {couple?.anniversary ? '[ UPDATE ]' : '[ INITIALIZE ]'}
               </button>
             ) : (
-              <button onClick={updateAnniversary} className="text-[10px] uppercase font-black tracking-widest text-white bg-green-400 px-3 py-1 rounded-full shadow-lg shadow-green-100">
-                Confirm
+              <button onClick={updateAnniversary} className="btn-primary text-[10px] font-mono font-black uppercase tracking-widest text-white bg-green-500 px-4 py-2 rounded-xl shadow-lg shadow-green-100">
+                [ CONFIRM ]
               </button>
             )}
           </div>
@@ -406,37 +407,61 @@ export default function PlansScreen() {
       )}
 
       {isAdding && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm glass rounded-[40px] p-8 space-y-6">
-            <h3 className="text-xl font-serif">Add a Plan</h3>
-            <div className="space-y-4">
-              <input
-                value={newPlan.title}
-                onChange={e => setNewPlan({...newPlan, title: e.target.value})}
-                placeholder="What's the plan?"
-                className="w-full p-4 bg-white/50 rounded-2xl outline-none text-sm"
-              />
-              <input
-                type="date"
-                value={newPlan.date}
-                onChange={e => setNewPlan({...newPlan, date: e.target.value})}
-                className="w-full p-4 bg-white/50 rounded-2xl outline-none text-sm"
-              />
-              <select
-                value={newPlan.type}
-                onChange={e => setNewPlan({...newPlan, type: e.target.value})}
-                className="w-full p-4 bg-white/50 rounded-2xl outline-none text-sm"
-              >
-                <option value="date">Date Night</option>
-                <option value="event">Event</option>
-                <option value="occasion">Special Occasion</option>
-              </select>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md" onClick={() => setIsAdding(false)}>
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={e => e.stopPropagation()}
+            className="w-full max-w-sm glass rounded-[40px] p-10 space-y-8 tech-border"
+          >
+            <div className="space-y-1 text-center">
+              <h3 className="text-xl font-display font-black uppercase tracking-tight">New Mission</h3>
+              <p className="text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">Objective // Task_Entry</p>
             </div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setIsAdding(false)} className="flex-1 py-3 text-sm opacity-50">Cancel</button>
-              <button onClick={addPlan} className="flex-1 py-3 bg-[#4A4440] text-white rounded-2xl text-sm font-bold">Add Plan</button>
+            
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 ml-2">Description</label>
+                <input
+                  autoFocus
+                  value={newPlan.title}
+                  onChange={e => setNewPlan({...newPlan, title: e.target.value})}
+                  placeholder="WHAT_IS_THE_PLAN..."
+                  className="w-full p-5 bg-white/50 rounded-3xl outline-none text-xs font-mono uppercase border border-black/5 focus:border-brand/30 transition-colors"
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 ml-2">Timeline</label>
+                <input
+                  type="date"
+                  value={newPlan.date}
+                  onChange={e => setNewPlan({...newPlan, date: e.target.value})}
+                  className="w-full p-5 bg-white/50 rounded-3xl outline-none text-xs font-mono border border-black/5 focus:border-brand/30 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono uppercase tracking-[0.2em] opacity-40 ml-2">Category</label>
+                <select
+                  value={newPlan.type}
+                  onChange={e => setNewPlan({...newPlan, type: e.target.value})}
+                  className="w-full p-5 bg-white/50 rounded-3xl outline-none text-xs font-mono uppercase border border-black/5 focus:border-brand/30 transition-colors appearance-none"
+                >
+                  <option value="date">Date Night</option>
+                  <option value="event">Event</option>
+                  <option value="occasion">Special Occasion</option>
+                </select>
+              </div>
             </div>
-          </div>
+            
+            <div className="flex gap-4 pt-2">
+              <button onClick={() => setIsAdding(false)} className="btn-primary flex-1 py-4 text-[10px] font-mono font-black uppercase tracking-widest opacity-30">Cancel</button>
+              <button onClick={addPlan} className="btn-primary flex-1 py-4 bg-brand text-white rounded-2xl text-[10px] font-mono font-black uppercase tracking-widest shadow-lg shadow-brand/20">
+                [ DEPLOY ]
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
@@ -462,21 +487,27 @@ function PlanCard({ plan, onDelete }: any) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass p-5 rounded-[32px] flex items-center justify-between group"
+      className="glass p-6 rounded-[32px] flex items-center justify-between group tech-border transition-all hover:bg-white/60"
     >
-      <div className="flex items-center space-x-4">
-        <div className={`p-3 rounded-2xl ${isDate ? 'bg-brand-soft text-brand' : 'bg-blue-100 text-blue-500'}`}>
-          <Icon className="w-5 h-5" />
+      <div className="flex items-center space-x-5">
+        <div className={`p-4 rounded-2xl ${isDate ? 'bg-brand/5 text-brand border border-brand/10' : 'bg-blue-500/5 text-blue-500 border border-blue-500/10'}`}>
+          <Icon className={`w-5 h-5 ${isDate ? 'fill-brand/20' : ''}`} />
         </div>
-        <div>
-          <h4 className="text-sm font-bold">{plan.title}</h4>
-          <div className="flex items-center space-x-2 text-[10px] opacity-40 uppercase tracking-widest font-bold" key={plan.date}>
-            <Clock className="w-3 h-3" />
-            <span>{new Date(plan.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+        <div className="space-y-1">
+          <h4 className="text-sm font-display font-bold text-[#4A4440]">{plan.title}</h4>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5 text-[9px] font-mono opacity-40 uppercase tracking-widest">
+              <Clock className="w-3 h-3" />
+              <span>{new Date(plan.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+            </div>
+            <div className="w-1 h-1 bg-black/10 rounded-full" />
+            <span className="text-[9px] font-mono opacity-30 uppercase tracking-widest">{plan.type}</span>
           </div>
         </div>
       </div>
-      <button onClick={onDelete} className="p-2 opacity-0 group-hover:opacity-100 text-red-400 text-xs">Remove</button>
+      <button onClick={onDelete} className="btn-primary p-2 opacity-0 group-hover:opacity-100 text-red-400">
+        <Plus className="w-4 h-4 rotate-45" />
+      </button>
     </motion.div>
   );
 }

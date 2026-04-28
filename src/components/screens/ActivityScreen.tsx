@@ -56,10 +56,13 @@ export default function ActivityScreen() {
   }
 
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
+    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="space-y-1">
-        <h1 className="text-3xl font-serif font-bold text-text-main">Activity</h1>
-        <p className="text-sm opacity-50 italic">Captured moments of your journey.</p>
+        <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter">Activity Log</h1>
+        <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
+          <span className="w-2 h-2 bg-brand animate-pulse" />
+          <span className="uppercase">Operational_Log_v2.4</span>
+        </div>
       </div>
 
       <div className="space-y-6 relative ml-4">
@@ -76,29 +79,32 @@ export default function ActivityScreen() {
                 transition={{ delay: i * 0.05 }}
                 className="relative pl-8"
               >
-                <div className="absolute left-[-4px] top-6 w-2 h-2 rounded-full bg-brand ring-4 ring-bg-app" />
+                <div className="absolute left-[-4px] top-6 w-2 h-2 rounded-full bg-brand ring-4 ring-bg-app shadow-[0_0_8px_rgba(244,114,182,0.5)]" />
                 
-                <div className="glass p-5 rounded-[28px] space-y-4">
+                <div className="glass p-5 rounded-[28px] space-y-4 tech-border">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-white shrink-0">
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white shrink-0 border border-black/5 shadow-inner">
                       {actor.photo ? (
                         <img src={actor.photo} alt={actor.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-brand">
+                        <div className="w-full h-full flex items-center justify-center text-[10px] font-mono font-bold text-brand uppercase">
                           {actor.name[0]}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm">
-                        <span className="font-bold">{actor.name}</span>
-                        <span className="opacity-60 ml-1">{activity.content}</span>
-                      </p>
-                      <p className="text-[10px] opacity-30 font-bold uppercase tracking-widest mt-0.5">
-                        {activity.createdAt?.toDate ? activity.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-display font-bold text-text-main">{actor.name}</span>
+                        <div className="w-1 h-1 bg-black/10 rounded-full" />
+                        <span className="text-[10px] font-mono opacity-30 uppercase tracking-tighter">
+                          {activity.createdAt?.toDate ? activity.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live'}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-60 mt-0.5 leading-relaxed">
+                        {activity.content}
                       </p>
                     </div>
-                    <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center text-brand shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-brand/5 flex items-center justify-center text-brand shrink-0 border border-brand/10">
                       {getActivityIcon(activity.type)}
                     </div>
                   </div>

@@ -48,25 +48,6 @@ export default function App() {
     return <WelcomeScreen />;
   }
 
-  // If user is logged in but not linked to a couple, show a linking screen (via Profile)
-  if (!couple && activeTab !== 'profile') {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center p-8 text-center space-y-6">
-        <div className="p-6 glass rounded-3xl space-y-4">
-          <Sparkles className="w-12 h-12 text-yellow-400 mx-auto" />
-          <h1 className="text-2xl font-serif">Welcome to Synced</h1>
-          <p className="text-sm opacity-70">To begin your journey, link with your partner in the profile section.</p>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className="btn-primary w-full py-3 bg-brand-soft text-brand rounded-2xl hover:bg-opacity-80 transition-colors font-medium border border-brand/10"
-          >
-            Go to Profile
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const renderScreen = () => {
     switch (activeTab) {
       case 'home': return <HomeScreen />;

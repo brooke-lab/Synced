@@ -63,29 +63,42 @@ export default function GoalsScreen() {
     }
   };
 
+  const updateProgress = async (goal: any, newProgress: number) => {
+    if (!couple?.id) return;
+    const goalRef = doc(db, 'couples', couple.id, 'goals', goal.id);
+    await updateDoc(goalRef, {
+      progress: newProgress,
+      completed: newProgress === 100
+    });
+  };
+
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
+    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-[#4A4440]">Our Goals</h1>
-          <p className="text-sm opacity-50 italic">Growing side by side.</p>
+          <h1 className="text-4xl font-display font-black text-[#4A4440] uppercase tracking-tighter">Our Goals</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
+            <span className="w-2 h-2 bg-green-400" />
+            <span className="uppercase">Mission_Log_v3.2</span>
+          </div>
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="p-3 bg-white rounded-2xl shadow-sm text-green-500 hover:scale-110 active:scale-95 transition-all"
+          className="btn-primary p-3 bg-white rounded-2xl shadow-sm text-green-500 border border-black/5"
         >
           <Plus className="w-6 h-6" />
         </button>
       </div>
 
-      <div className="space-y-8">
-        <Section title="Shared Journey" goals={goals.filter(g => g.type === 'shared')} onToggle={toggleGoal} icon={Users} user={user} partner={partner} />
-        <Section title="My Growth" goals={goals.filter(g => g.type === 'individual' && g.ownerId === user?.uid)} onToggle={toggleGoal} icon={UserIcon} user={user} partner={partner} />
+      <div className="space-y-10">
+        <Section title="Shared Journey" goals={goals.filter(g => g.type === 'shared')} onToggle={toggleGoal} onUpdateProgress={updateProgress} icon={Users} user={user} partner={partner} />
+        <Section title="My Growth" goals={goals.filter(g => g.type === 'individual' && g.ownerId === user?.uid)} onToggle={toggleGoal} onUpdateProgress={updateProgress} icon={UserIcon} user={user} partner={partner} />
         {partner && (
           <Section 
             title={`${user?.nicknames?.[partner.uid] || partner.displayName || 'Partner'}'s Growth`} 
             goals={goals.filter(g => g.type === 'individual' && g.ownerId === partner.uid)} 
             onToggle={toggleGoal} 
+            onUpdateProgress={updateProgress}
             icon={UserIcon} 
             user={user}
             partner={partner}
@@ -120,45 +133,78 @@ export default function GoalsScreen() {
   );
 }
 
-function Section({ title, goals, onToggle, icon: Icon, user, partner }: any) {
+function Section({ title, goals, onToggle, onUpdateProgress, icon: Icon, user, partner }: any) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center space-x-2 text-[10px] uppercase tracking-widest font-bold opacity-30 px-2">
+    <div className="space-y-6">
+      <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-[0.3em] font-bold opacity-30 px-2">
         <Icon className="w-3 h-3" />
         <span>{title}</span>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {goals.map((goal: any) => {
           const ownerPhoto = goal.ownerId === user?.uid ? user.photoURL : partner?.photoURL;
           
           return (
-            <div key={goal.id} className={`glass p-5 rounded-[28px] flex items-center space-x-4 transition-all ${goal.completed ? 'opacity-40' : ''}`}>
-              <button 
-                onClick={() => onToggle(goal)} 
-                className={`transition-all hover:scale-110 active:scale-95 ${goal.completed ? 'text-green-500' : 'text-gray-400'}`}
-              >
-                {goal.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-              </button>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className={`text-sm font-bold truncate ${goal.completed ? 'line-through' : ''}`}>{goal.title}</p>
-                  {goal.type === 'shared' && ownerPhoto && (
-                    <img src={ownerPhoto} className="w-4 h-4 rounded-full opacity-40 shrink-0" alt="Owner" />
-                  )}
+            <div key={goal.id} className={`glass p-6 rounded-[32px] flex flex-col space-y-4 transition-all tech-border ${goal.completed ? 'opacity-50 grayscale' : ''}`}>
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => onToggle(goal)} 
+                  className={`btn-primary transition-all ${goal.completed ? 'text-green-500' : 'text-gray-300'}`}
+                >
+                  {goal.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                </button>
+                
+                <div className="flex-1 min-w-0 pr-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`text-sm font-bold truncate ${goal.completed ? 'line-through' : ''}`}>{goal.title}</p>
+                    {goal.type === 'shared' && ownerPhoto && (
+                      <div className="flex items-center space-x-1 opacity-40">
+                        <span className="text-[8px] font-mono uppercase tracking-tighter">Updated by</span>
+                        <img src={ownerPhoto} className="w-4 h-4 rounded-full" alt="Owner" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="w-full h-1 bg-black/5 rounded-full mt-2 overflow-hidden">
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest opacity-40">
+                  <div className="flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+                    <span>Progression</span>
+                  </div>
+                  <span>{goal.progress || 0}%</span>
+                </div>
+                
+                <div className="relative group/progress h-2 bg-black/5 rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${goal.progress}%` }}
-                    className={`h-full ${goal.completed ? 'bg-green-500' : 'bg-brand'}`}
-                  />
+                    animate={{ width: `${goal.progress || 0}%` }}
+                    className={`h-full relative ${goal.completed ? 'bg-green-400' : 'bg-brand'}`}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-shimmer" />
+                  </motion.div>
                 </div>
+
+                {!goal.completed && (
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={goal.progress || 0}
+                    onChange={(e) => onUpdateProgress(goal, parseInt(e.target.value))}
+                    className="w-full h-1 mt-2 accent-brand bg-transparent cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
+                  />
+                )}
               </div>
             </div>
           );
         })}
-        {goals.length === 0 && <p className="text-xs italic opacity-20 px-2">No goals in this section yet.</p>}
+        {goals.length === 0 && (
+          <div className="py-8 text-center glass rounded-[32px] border border-dashed border-black/5">
+            <p className="text-[10px] font-mono uppercase tracking-widest opacity-20 italic">No objectives assigned.</p>
+          </div>
+        )}
       </div>
     </div>
   );

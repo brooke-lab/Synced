@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, LogOut, Link2, Ghost, Sparkles, Heart, Copy, Check, Palette, ShieldAlert, Trash2, Edit3, Save, UserCircle } from 'lucide-react';
+import { User, LogOut, Link2, Ghost, Sparkles, Heart, Copy, Check, Palette, ShieldAlert, Trash2, Edit3, Save, UserCircle, Upload, X } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { signOut, db } from '../../lib/firebase';
 import { doc, updateDoc, setDoc, getDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
@@ -17,6 +17,7 @@ export default function ProfileScreen() {
   const [newName, setNewName] = useState(user?.displayName || '');
   const [isEditingPhoto, setIsEditingPhoto] = useState(false);
   const [newPhotoUrl, setNewPhotoUrl] = useState(user?.photoURL || '');
+  const [uploading, setUploading] = useState(false);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState('');
 
@@ -163,6 +164,34 @@ export default function ProfileScreen() {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Image must be smaller than 2MB");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      try {
+        await updateDoc(doc(db, 'users', user.uid), {
+          photoURL: base64String
+        });
+        setIsEditingPhoto(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to upload image");
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleLogout = () => {
     signOut();
   };
@@ -178,28 +207,66 @@ export default function ProfileScreen() {
 
       <div className="flex flex-col items-center space-y-4">
         <div 
-          onClick={() => setIsEditingPhoto(true)}
-          className="w-24 h-24 rounded-[32px] bg-white shadow-xl flex items-center justify-center p-1 border-4 border-white cursor-pointer group relative overflow-hidden"
+          className="relative group h-24"
         >
-          <img src={user?.photoURL || ''} className="w-full h-full rounded-[28px] object-cover transition-all group-hover:opacity-40" />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-            <Edit3 className="w-6 h-6 text-brand" />
+          <div 
+            onClick={() => setIsEditingPhoto(!isEditingPhoto)}
+            className="w-24 h-24 rounded-[32px] bg-white shadow-xl flex items-center justify-center p-1 border-4 border-white cursor-pointer overflow-hidden transition-all active:scale-95 group-hover:border-brand/20"
+          >
+            <img src={user?.photoURL || ''} className="w-full h-full rounded-[28px] object-cover transition-all group-hover:scale-110" />
+            <div className="absolute inset-0 bg-brand/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+              <Upload className="w-5 h-5 text-white drop-shadow-md" />
+            </div>
           </div>
+          
+          {uploading && (
+            <div className="absolute inset-0 rounded-[32px] bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
         </div>
 
         {isEditingPhoto && (
-          <div className="flex items-center space-x-2 bg-white shadow-sm rounded-2xl p-2 px-3 border border-brand/10 w-full max-w-xs transition-all animate-in slide-in-from-top-4">
-            <input
-              autoFocus
-              value={newPhotoUrl}
-              onChange={e => setNewPhotoUrl(e.target.value)}
-              placeholder="Enter photo URL..."
-              className="bg-transparent outline-none text-[10px] font-mono flex-1"
-            />
-            <button onClick={() => updateProfile('photoURL', newPhotoUrl)} className="text-brand">
-              <Save className="w-4 h-4" />
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass p-5 rounded-[32px] w-full max-w-xs space-y-4 tech-border shadow-2xl relative"
+          >
+            <button 
+              onClick={() => setIsEditingPhoto(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-brand transition-colors"
+            >
+              <X className="w-4 h-4" />
             </button>
-          </div>
+
+            <div className="space-y-1">
+              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-40">System_Avatar // Update</h3>
+              <p className="text-xs font-bold">Choose your digital persona.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <label className="btn-primary w-full py-3 bg-brand text-white rounded-2xl flex items-center justify-center space-x-2 text-xs font-bold cursor-pointer">
+                <Upload className="w-4 h-4" />
+                <span>Upload From Device</span>
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+              </label>
+              
+              <div className="relative">
+                <input
+                  value={newPhotoUrl}
+                  onChange={e => setNewPhotoUrl(e.target.value)}
+                  placeholder="Or paste image URL..."
+                  className="w-full p-4 bg-white/60 rounded-2xl outline-none text-[10px] font-mono border border-black/5 focus:border-brand/20 transition-colors"
+                />
+                <button 
+                  onClick={() => updateProfile('photoURL', newPhotoUrl)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-brand/10 text-brand rounded-xl hover:bg-brand/20 transition-all"
+                >
+                  <Save className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         <div className="text-center w-full max-w-[200px]">

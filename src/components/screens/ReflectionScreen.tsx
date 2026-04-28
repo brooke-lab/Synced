@@ -119,21 +119,24 @@ export default function ReflectionScreen() {
   const partnerName = user?.nicknames?.[partner?.uid || ''] || partner?.displayName || 'My Love';
 
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
+    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-3xl font-serif font-bold text-text-main">Love Letters</h1>
-          <p className="text-sm opacity-50 italic">Revealed every {DAYS[revealDay]}.</p>
+          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter">Reflections</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
+            <span className="w-2 h-2 bg-brand animate-pulse" />
+            <span className="uppercase">Thought_Sync_v3.8</span>
+          </div>
         </div>
         <div className="flex space-x-2">
           <button 
             onClick={() => setIsMuted(!isMuted)}
-            className={`p-2 rounded-xl glass transition-all ${isMuted ? 'text-gray-400' : 'text-brand'}`}
+            className={`btn-primary p-2.5 rounded-[18px] glass transition-all ${isMuted ? 'text-gray-400' : 'text-brand shadow-[0_0_10px_rgba(244,114,182,0.2)]'}`}
           >
-            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 transition-transform hover:scale-110" />}
           </button>
-          <div className={`p-2 rounded-xl glass ${isRevealDay ? 'text-brand animate-float' : 'text-gray-300'}`}>
-            {isRevealDay ? <Unlock className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+          <div className={`p-2.5 rounded-[18px] glass border border-black/5 ${isRevealDay ? 'text-brand animate-float shadow-[0_0_15px_rgba(244,114,182,0.3)]' : 'text-gray-300'}`}>
+            {isRevealDay ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
           </div>
         </div>
       </div>
@@ -142,76 +145,88 @@ export default function ReflectionScreen() {
         !isTyping ? (
           <button
             onClick={() => setIsTyping(true)}
-            className="w-full p-8 glass rounded-[40px] flex flex-col items-center justify-center space-y-4 border-dashed border-2 border-brand/20 transition-all hover:border-brand/40 active:scale-95"
+            className="btn-primary w-full p-10 glass rounded-[40px] flex flex-col items-center justify-center space-y-5 border-dashed border-2 border-brand/20 transition-all hover:border-brand/40 group relative overflow-hidden"
           >
-            <div className="p-4 bg-brand-soft rounded-full">
-              <Heart className="w-10 h-10 text-brand fill-brand/20" />
+            <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="p-5 bg-brand/5 rounded-[24px] relative z-10">
+              <Heart className="w-10 h-10 text-brand fill-brand/20 group-hover:scale-110 transition-transform" />
             </div>
-            <div className="space-y-1 text-center">
-              <p className="text-sm font-bold">Write your letter for {currentWeek}</p>
-              <p className="text-[10px] opacity-40 uppercase tracking-widest font-black">Sealed until {DAYS[revealDay]}</p>
+            <div className="space-y-2 text-center relative z-10">
+              <p className="text-sm font-display font-bold uppercase tracking-widest text-[#4A4440]">Initialize Letter // {currentWeek}</p>
+              <div className="flex items-center justify-center space-x-2 text-[10px] font-mono opacity-40">
+                <span className="w-1 h-1 bg-brand rounded-full animate-pulse" />
+                <span className="uppercase tracking-widest">Locked Until {DAYS[revealDay]}</span>
+              </div>
             </div>
           </button>
         ) : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass p-6 rounded-[40px] space-y-4 shadow-xl shadow-brand/10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass p-8 rounded-[40px] space-y-6 shadow-sm border border-brand/10 tech-border scroll-mt-24"
           >
+            <div className="flex items-center space-x-2 text-[10px] font-mono opacity-40 uppercase tracking-[0.2em]">
+              <span className="w-1 h-3 bg-brand" />
+              <span>Input_Buffer // Secure</span>
+            </div>
             <textarea
               autoFocus
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Deep breaths. Write from the heart..."
-              className="w-full p-4 bg-white/40 rounded-3xl text-sm outline-none resize-none h-48 placeholder:italic font-serif"
+              placeholder="TRANSMIT_THOUGHTS..."
+              className="w-full p-6 bg-white/40 rounded-[32px] text-sm outline-none resize-none h-64 placeholder:opacity-20 font-serif leading-relaxed"
             />
-            <div className="flex gap-3">
-              <button onClick={() => setIsTyping(false)} className="flex-1 py-3 text-sm opacity-50 uppercase tracking-widest font-black">Cancel</button>
+            <div className="flex gap-4">
+              <button onClick={() => setIsTyping(false)} className="btn-primary flex-1 py-4 text-[10px] font-mono font-black uppercase tracking-widest opacity-30">Cancel</button>
               <button
                 onClick={sendReflection}
                 disabled={!content.trim()}
-                className="flex-1 py-3 bg-brand text-white rounded-[24px] text-sm font-bold flex items-center justify-center space-x-2 shadow-lg shadow-brand/20 disabled:opacity-50"
+                className="btn-primary flex-1 py-4 bg-brand text-white rounded-[24px] text-[10px] font-mono font-black border border-brand/20 uppercase tracking-widest flex items-center justify-center space-x-2 shadow-lg shadow-brand/20 disabled:opacity-50"
               >
-                <Send className="w-4 h-4" />
-                <span className="uppercase tracking-widest">Seal Letter</span>
+                <Send className="w-4 h-4 rotate-45" />
+                <span>[ SEAL_PACKET ]</span>
               </button>
             </div>
           </motion.div>
         )
       ) : (
-        <div className="glass p-8 rounded-[40px] flex flex-col items-center justify-center text-center space-y-3 opacity-60">
-          <Check className="w-8 h-8 text-green-500" />
-          <p className="text-sm font-medium">Your letter for this week is sealed.</p>
-          <p className="text-[10px] uppercase font-black tracking-tighter opacity-40">Ready for {DAYS[revealDay]}</p>
+        <div className="glass p-10 rounded-[40px] flex flex-col items-center justify-center text-center space-y-4 opacity-70 tech-border scanline">
+          <div className="p-4 bg-green-500/10 rounded-2xl">
+            <Check className="w-8 h-8 text-green-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-display font-bold uppercase tracking-tight">Packet Sealed Successfully</p>
+            <p className="text-[10px] font-mono uppercase font-black tracking-[0.2em] opacity-40 text-brand">Decryption Possible: {DAYS[revealDay]}</p>
+          </div>
         </div>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between px-2 mt-8">
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-2 text-[10px] uppercase tracking-widest font-bold opacity-30">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-[0.3em] font-bold opacity-30">
               <MessageSquareHeart className="w-4 h-4" />
-              <span>{filter === 'all' ? 'Shared Journey' : 'Treasured Memories'}</span>
+              <span>{filter === 'all' ? 'Archive // Main' : 'Archive // Favorites'}</span>
             </div>
-            <div className="flex space-x-4 mt-2">
+            <div className="flex space-x-6 px-1">
               <button 
                 onClick={() => setFilter('all')}
-                className={`text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'text-brand' : 'opacity-20'}`}
+                className={`text-[10px] font-mono font-black uppercase tracking-widest transition-all ${filter === 'all' ? 'text-brand' : 'opacity-20'}`}
               >
-                Collection
+                [ ALL ]
               </button>
               <button 
                 onClick={() => setFilter('favorites')}
-                className={`text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'favorites' ? 'text-brand' : 'opacity-20'}`}
+                className={`text-[10px] font-mono font-black uppercase tracking-widest transition-all ${filter === 'favorites' ? 'text-brand' : 'opacity-20'}`}
               >
-                Favorites
+                [ FAVS ]
               </button>
             </div>
           </div>
           {!isRevealDay && filter === 'all' && (
-            <div className="flex items-center space-x-1 text-[9px] font-bold text-brand/60 uppercase">
-              <Clock className="w-3 h-3" />
-              <span>Revealing soon</span>
+            <div className="flex items-center space-x-2 text-[8px] font-mono font-bold text-brand/60 uppercase p-2 bg-brand/5 rounded-lg border border-brand/10">
+              <Clock className="w-3 h-3 animate-spin [animation-duration:10s]" />
+              <span className="tracking-tighter">Awaiting_Revealy</span>
             </div>
           )}
         </div>

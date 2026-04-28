@@ -76,6 +76,20 @@ export default function HomeScreen() {
       </div>
 
       {/* Live Status Board */}
+      {!couple && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass p-6 rounded-[32px] border border-brand/20 bg-brand/5 flex items-center justify-between tech-border scanline"
+        >
+          <div className="space-y-1">
+            <h3 className="text-sm font-display font-bold uppercase tracking-tight text-brand">Solo_Mode Active</h3>
+            <p className="text-[10px] font-mono opacity-60 uppercase tracking-tighter">Pair with partner to unlock shared core</p>
+          </div>
+          <Heart className="w-5 h-5 text-brand animate-pulse" />
+        </motion.div>
+      )}
+
       <section className="grid grid-cols-2 gap-4">
         <StatusCard
           isPartner={false}

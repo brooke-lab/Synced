@@ -134,6 +134,36 @@ function CustomVideoPlayer({ src }: { src: string }) {
 
 const PREDEFINED_TAGS = ['Happy', 'Romantic', 'Fun', 'Cozy', 'Adventure'];
 
+function ZoomableImage({ src, alt }: { src: string, alt?: string }) {
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(prev => prev > 1 ? 1 : 2.5);
+  };
+
+  return (
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden touch-none relative">
+      <motion.img
+        src={src}
+        alt={alt}
+        drag={scale > 1}
+        dragConstraints={containerRef}
+        dragElastic={0.2}
+        animate={{ scale }}
+        onDoubleClick={handleDoubleClick}
+        className={`max-w-full max-h-full object-contain rounded-xl select-none ${scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in shadow-2xl'}`}
+      />
+      {scale === 1 && (
+        <div className="absolute bottom-4 right-4 text-[10px] font-mono uppercase bg-black/20 backdrop-blur-md px-2 py-1 rounded text-white opacity-40 pointer-events-none">
+          Double click to zoom
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GalleryScreen() {
   const { user, couple } = useAuth();
   const [items, setItems] = useState<any[]>([]);
@@ -196,17 +226,20 @@ export default function GalleryScreen() {
   };
 
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
+    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-text-main">Memories</h1>
-          <p className="text-sm opacity-50 italic">Our shared moments.</p>
+        <div className="space-y-1">
+          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter">Memories</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
+            <span className="w-2 h-2 bg-brand animate-pulse" />
+            <span className="uppercase">Archive_Module_v1.2</span>
+          </div>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="p-3 bg-brand text-white rounded-2xl shadow-lg shadow-brand/20 active:scale-95 transition-all"
+          className="btn-primary p-3 bg-brand text-white rounded-2xl shadow-lg shadow-brand/20"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-6 h-6" />
         </button>
       </div>
 
@@ -216,7 +249,7 @@ export default function GalleryScreen() {
             layoutId={item.id}
             key={item.id}
             onClick={() => setSelectedMedia(item)}
-            className="aspect-square bg-gray-100 rounded-3xl overflow-hidden relative group cursor-pointer"
+            className="aspect-square bg-gray-100 rounded-3xl overflow-hidden relative group cursor-pointer tech-border"
           >
             {item.type === 'image' ? (
               <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -340,14 +373,16 @@ export default function GalleryScreen() {
         {selectedMedia && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-0"
             onClick={() => setSelectedMedia(null)}
           >
-            <motion.div layoutId={selectedMedia.id} className="relative w-full max-w-4xl h-full flex items-center justify-center p-4">
+            <motion.div layoutId={selectedMedia.id} className="relative w-full h-full flex items-center justify-center">
                {selectedMedia.type === 'image' ? (
-                <img src={selectedMedia.url} className="max-w-full max-h-full object-contain rounded-xl" />
+                <ZoomableImage src={selectedMedia.url} />
               ) : (
-                <CustomVideoPlayer src={selectedMedia.url} />
+                <div className="w-full max-w-4xl h-full flex items-center justify-center p-4">
+                  <CustomVideoPlayer src={selectedMedia.url} />
+                </div>
               )}
               
               <button 

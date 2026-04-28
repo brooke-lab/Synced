@@ -14,6 +14,18 @@
   
   --animate-pulse-slow: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-scanning: scanning 3s linear infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+
+  @keyframes scanning {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(400%); }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 
   @keyframes pulse-slow {
     0%, 100% { opacity: 1; }
@@ -95,11 +107,6 @@
   background: linear-gradient(to right, transparent, var(--brand-color), transparent);
   opacity: 0.1;
   animation: scanning 3s linear infinite;
-}
-
-@keyframes scanning {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(400%); }
 }
 
 .soft-shadow {
