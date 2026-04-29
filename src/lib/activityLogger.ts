@@ -19,6 +19,8 @@ export async function logActivity(
       userId,
       content,
       metadata,
+      likedBy: [],
+      replies: [],
       createdAt: serverTimestamp()
     });
   } catch (error) {

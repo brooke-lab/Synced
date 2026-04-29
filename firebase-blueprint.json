@@ -19,6 +19,19 @@
           "type": "object", 
           "additionalProperties": { "type": "string" },
           "description": "UID mapping to nicknames set by that user."
+        },
+        "zodiacSign": { 
+          "type": "string", 
+          "enum": ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"] 
+        },
+        "brainBattery": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Mental energy level." },
+        "settings": {
+          "type": "object",
+          "properties": {
+             "notifications": { "type": "boolean" },
+             "privacy": { "type": "boolean" },
+             "atmosphere": { "type": "string", "enum": ["calm", "energetic", "focus"] }
+          }
         }
       },
       "required": ["uid", "email"]
@@ -35,7 +48,19 @@
           "text": { "type": "string" },
           "author": { "type": "string" }
         }},
-        "theme": { "type": "string" }
+        "theme": { "type": "string" },
+        "lastCosmicInsight": { "type": "string" },
+        "lastCosmicSync": { "type": "string", "format": "date-time" },
+        "studySession": {
+          "type": "object",
+          "properties": {
+            "isActive": { "type": "boolean" },
+            "startTime": { "type": "string", "format": "date-time" },
+            "duration": { "type": "integer" },
+            "type": { "type": "string", "enum": ["focus", "break"] },
+            "startedBy": { "type": "string" }
+          }
+        }
       },
       "required": ["members"]
     },
@@ -231,6 +256,10 @@
     "/couples/{coupleId}/activities/{activityId}": {
       "schema": "Activity",
       "description": "Feed of activities for the couple."
+    },
+    "/couples/{coupleId}/pokes/{pokeId}": {
+      "schema": "object",
+      "description": "Neural pokes between partners."
     }
   }
 }

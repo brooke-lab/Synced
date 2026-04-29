@@ -70,21 +70,31 @@ export default function GoalsScreen() {
       progress: newProgress,
       completed: newProgress === 100
     });
+
+    if (newProgress === 100) {
+      await logActivity(
+        couple.id,
+        user?.uid || '',
+        'goal',
+        `reached 100% on: "${goal.title}" 🏆`,
+        { goalTitle: goal.title }
+      );
+    }
   };
 
   return (
     <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-4xl font-display font-black text-[#4A4440] uppercase tracking-tighter">Our Goals</h1>
-          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
-            <span className="w-2 h-2 bg-green-400" />
-            <span className="uppercase">Mission_Log_v3.2</span>
+          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter glow-text-white">Our Goals</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono text-brand font-bold glow-brand">
+            <span className="w-2 h-2 bg-brand animate-ping rounded-full" />
+            <span className="uppercase tracking-[0.2em]">Mission_Log_v3.2</span>
           </div>
         </div>
         <button
           onClick={() => setIsAdding(true)}
-          className="btn-primary p-3 bg-white rounded-2xl shadow-sm text-green-500 border border-black/5"
+          className="p-3 bg-brand text-white rounded-2xl shadow-xl shadow-brand/20 hover:scale-105 transition-all glow-brand"
         >
           <Plus className="w-6 h-6" />
         </button>
@@ -136,65 +146,72 @@ export default function GoalsScreen() {
 function Section({ title, goals, onToggle, onUpdateProgress, icon: Icon, user, partner }: any) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-[0.3em] font-bold opacity-30 px-2">
-        <Icon className="w-3 h-3" />
-        <span>{title}</span>
+      <div className="flex items-center space-x-4 px-2 opacity-40">
+        <span className="w-8 h-[1px] bg-text-main" />
+        <h3 className="text-[9px] font-mono font-black uppercase tracking-[0.6em] text-text-main">{title}</h3>
       </div>
       <div className="space-y-4">
         {goals.map((goal: any) => {
           const ownerPhoto = goal.ownerId === user?.uid ? user.photoURL : partner?.photoURL;
           
           return (
-            <div key={goal.id} className={`glass p-6 rounded-[32px] flex flex-col space-y-4 transition-all tech-border ${goal.completed ? 'opacity-50 grayscale' : ''}`}>
-              <div className="flex items-center space-x-4">
+            <div key={goal.id} className={`card-neo !p-6 flex flex-col space-y-4 transition-all relative overflow-hidden group ${goal.completed ? 'opacity-40 grayscale blur-[0.5px]' : ''}`}>
+              <div className="absolute inset-0 pointer-events-none opacity-[0.02] animate-scanning bg-gradient-to-b from-brand to-transparent" />
+              <div className="flex items-center space-x-4 relative z-10">
                 <button 
                   onClick={() => onToggle(goal)} 
-                  className={`btn-primary transition-all ${goal.completed ? 'text-green-500' : 'text-gray-300'}`}
+                  className={`transition-all hover:scale-110 active:scale-90 ${goal.completed ? 'text-brand glow-brand' : 'text-white/20'}`}
                 >
-                  {goal.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                  {goal.completed ? <CheckCircle2 className="w-7 h-7" /> : <Circle className="w-7 h-7" />}
                 </button>
                 
                 <div className="flex-1 min-w-0 pr-2">
                   <div className="flex items-center justify-between gap-2">
-                    <p className={`text-sm font-bold truncate ${goal.completed ? 'line-through' : ''}`}>{goal.title}</p>
+                    <p className={`text-md font-display font-bold text-text-main tracking-tight ${goal.completed ? 'line-through opacity-50' : 'glow-text-white'}`}>{goal.title}</p>
                     {goal.type === 'shared' && ownerPhoto && (
-                      <div className="flex items-center space-x-1 opacity-40">
-                        <span className="text-[8px] font-mono uppercase tracking-tighter">Updated by</span>
-                        <img src={ownerPhoto} className="w-4 h-4 rounded-full" alt="Owner" />
+                      <div className="flex items-center space-x-2 bg-black/20 px-2 py-1 rounded-lg border border-white/5">
+                        <span className="text-[7px] font-mono uppercase tracking-tighter opacity-30">Actor</span>
+                        <img src={ownerPhoto} className="w-4 h-4 rounded-full border border-white/20" alt="Owner" />
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest opacity-40">
+              <div className="space-y-3 relative z-10">
+                <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-widest text-white/30">
                   <div className="flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-                    <span>Progression</span>
+                    <span className={`w-1.5 h-1.5 rounded-full ${goal.completed ? 'bg-brand' : 'bg-brand animate-pulse'} glow-brand`} />
+                    <span className="font-black">Operational_Sync</span>
                   </div>
-                  <span>{goal.progress || 0}%</span>
+                  <span className={goal.completed ? 'text-brand glow-brand font-black' : ''}>{goal.progress || 0}%</span>
                 </div>
                 
-                <div className="relative group/progress h-2 bg-black/5 rounded-full overflow-hidden">
+                <div className="relative group/progress h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${goal.progress || 0}%` }}
-                    className={`h-full relative ${goal.completed ? 'bg-green-400' : 'bg-brand'}`}
+                    className={`h-full relative ${goal.completed ? 'bg-brand' : 'bg-brand shadow-[0_0_15px_rgba(230,0,76,0.5)]'}`}
                   >
-                    <div className="absolute inset-0 bg-white/20 animate-shimmer" />
+                    <div className="absolute inset-0 bg-white/10 animate-shimmer" />
                   </motion.div>
                 </div>
 
                 {!goal.completed && (
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={goal.progress || 0}
-                    onChange={(e) => onUpdateProgress(goal, parseInt(e.target.value))}
-                    className="w-full h-1 mt-2 accent-brand bg-transparent cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
-                  />
+                  <div className="pt-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={goal.progress || 0}
+                      onChange={(e) => onUpdateProgress(goal, parseInt(e.target.value))}
+                      className="w-full h-1.5 accent-brand bg-black/5 rounded-lg cursor-pointer transition-all active:scale-[1.02]"
+                    />
+                    <div className="flex justify-between mt-1 px-1">
+                      <span className="text-[8px] font-mono opacity-20 uppercase">Start</span>
+                      <span className="text-[8px] font-mono opacity-20 uppercase">Complete</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

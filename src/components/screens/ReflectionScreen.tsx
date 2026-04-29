@@ -14,9 +14,9 @@ const INSTRUMENTALS = [
 ];
 
 const LETTER_THEMES = [
-  { id: 'vintage', bg: 'bg-[#FDF6E3]', border: 'border-[#E6D2B5]', text: 'text-[#5C4033]', font: 'font-serif' },
-  { id: 'rose', bg: 'bg-[#FFF0F5]', border: 'border-[#FFC0CB]', text: 'text-[#D02090]', font: 'font-sans' },
-  { id: 'classic', bg: 'bg-[#FFFFFF]', border: 'border-brand/10', text: 'text-text-main', font: 'font-serif' },
+  { id: 'velvet', bg: 'bg-brand/10', border: 'border-brand/40', text: 'text-text-main', font: 'font-serif' },
+  { id: 'monochrome', bg: 'bg-white/5', border: 'border-white/20', text: 'text-white', font: 'font-sans' },
+  { id: 'cyber', bg: 'bg-[#120101]', border: 'border-brand/20', text: 'text-brand', font: 'font-mono' },
 ];
 
 export default function ReflectionScreen() {
@@ -122,20 +122,20 @@ export default function ReflectionScreen() {
     <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter">Reflections</h1>
-          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
-            <span className="w-2 h-2 bg-brand animate-pulse" />
-            <span className="uppercase">Thought_Sync_v3.8</span>
+          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter glow-text-white">Reflections</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono text-brand font-bold glow-brand">
+            <span className="w-2 h-2 bg-brand animate-ping rounded-full" />
+            <span className="uppercase tracking-[0.4em]">Thought_Sync_v3.8</span>
           </div>
         </div>
         <div className="flex space-x-2">
           <button 
             onClick={() => setIsMuted(!isMuted)}
-            className={`btn-primary p-2.5 rounded-[18px] glass transition-all ${isMuted ? 'text-gray-400' : 'text-brand shadow-[0_0_10px_rgba(244,114,182,0.2)]'}`}
+            className={`p-2.5 rounded-[18px] bg-white/5 border border-white/10 transition-all ${isMuted ? 'text-white/20' : 'text-brand glow-brand shadow-xl shadow-brand/20'}`}
           >
             {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 transition-transform hover:scale-110" />}
           </button>
-          <div className={`p-2.5 rounded-[18px] glass border border-black/5 ${isRevealDay ? 'text-brand animate-float shadow-[0_0_15px_rgba(244,114,182,0.3)]' : 'text-gray-300'}`}>
+          <div className={`p-2.5 rounded-[18px] bg-white/5 border transition-all ${isRevealDay ? 'border-brand text-brand glow-brand animate-float shadow-xl shadow-brand/20' : 'border-white/10 text-white/20'}`}>
             {isRevealDay ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function ReflectionScreen() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="TRANSMIT_THOUGHTS..."
-              className="w-full p-6 bg-white/40 rounded-[32px] text-sm outline-none resize-none h-64 placeholder:opacity-20 font-serif leading-relaxed"
+              className="w-full p-6 bg-black/40 rounded-[32px] text-sm outline-none resize-none h-64 placeholder:opacity-20 font-serif leading-relaxed text-text-main border border-white/5 focus:border-brand/40 transition-colors"
             />
             <div className="flex gap-4">
               <button onClick={() => setIsTyping(false)} className="btn-primary flex-1 py-4 text-[10px] font-mono font-black uppercase tracking-widest opacity-30">Cancel</button>

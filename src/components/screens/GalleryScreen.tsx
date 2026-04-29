@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Image, Play, Plus, Trash2, X, Heart, Pause, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
-import { db } from '../../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../../lib/firebase';
 import { doc, addDoc, collection, serverTimestamp, query, onSnapshot, orderBy, deleteDoc } from 'firebase/firestore';
 import { logActivity } from '../../lib/activityLogger';
 
@@ -134,7 +134,17 @@ function CustomVideoPlayer({ src }: { src: string }) {
 
 const PREDEFINED_TAGS = ['Happy', 'Romantic', 'Fun', 'Cozy', 'Adventure'];
 
-function ZoomableImage({ src, alt }: { src: string, alt?: string }) {
+const IMAGE_FILTERS = [
+  { id: 'none', name: 'Raw', class: '' },
+  { id: 'mono', name: 'Mono', class: 'filter-mono' },
+  { id: 'vintage', name: 'Vintage', class: 'filter-vintage' },
+  { id: 'cyber', name: 'Cyber', class: 'filter-cyber' },
+  { id: 'warm', name: 'Warm', class: 'filter-warm' },
+  { id: 'cool', name: 'Cool', class: 'filter-cool' },
+  { id: 'sepia', name: 'Sepia', class: 'sepia' },
+];
+
+function ZoomableImage({ src, alt, filter }: { src: string, alt?: string, filter?: string }) {
   const [scale, setScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -143,17 +153,19 @@ function ZoomableImage({ src, alt }: { src: string, alt?: string }) {
     setScale(prev => prev > 1 ? 1 : 2.5);
   };
 
+  const filterClass = IMAGE_FILTERS.find(f => f.id === filter)?.class || '';
+
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-hidden touch-none relative">
       <motion.img
-        src={src}
+        src={src || null}
         alt={alt}
         drag={scale > 1}
         dragConstraints={containerRef}
         dragElastic={0.2}
         animate={{ scale }}
         onDoubleClick={handleDoubleClick}
-        className={`max-w-full max-h-full object-contain rounded-xl select-none ${scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in shadow-2xl'}`}
+        className={`max-w-full max-h-full object-contain rounded-xl select-none ${scale > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in shadow-2xl'} ${filterClass}`}
       />
       {scale === 1 && (
         <div className="absolute bottom-4 right-4 text-[10px] font-mono uppercase bg-black/20 backdrop-blur-md px-2 py-1 rounded text-white opacity-40 pointer-events-none">
@@ -168,9 +180,12 @@ export default function GalleryScreen() {
   const { user, couple } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState('');
   const [url, setUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState('none');
   const [type, setType] = useState<'image' | 'video'>('image');
   const [selectedMedia, setSelectedMedia] = useState<any>(null);
 
@@ -192,6 +207,27 @@ export default function GalleryScreen() {
     );
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !couple?.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File size should be less than 5MB");
+      return;
+    }
+    setError('');
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result as string;
+      setUrl(base64String);
+      setType(file.type.startsWith('video') ? 'video' : 'image');
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const addItem = async () => {
     if (!url.trim() || !couple?.id) return;
     await addDoc(collection(db, 'couples', couple.id, 'gallery'), {
@@ -199,6 +235,7 @@ export default function GalleryScreen() {
       caption,
       type,
       tags: selectedTags,
+      filter: type === 'image' ? selectedFilter : 'none',
       addedBy: user?.uid,
       createdAt: serverTimestamp()
     });
@@ -208,12 +245,13 @@ export default function GalleryScreen() {
       user?.uid || '',
       'gallery',
       `added a new ${type}${selectedTags.length > 0 ? ` (${selectedTags.join(', ')})` : ''}`,
-      { url, type, caption, tags: selectedTags }
+      { url, type, caption, tags: selectedTags, filter: selectedFilter }
     );
 
     setUrl('');
     setCaption('');
     setSelectedTags([]);
+    setSelectedFilter('none');
     setIsAdding(false);
   };
 
@@ -229,17 +267,17 @@ export default function GalleryScreen() {
     <div className="p-6 pt-12 space-y-8 min-h-screen pb-32 dotted-grid scanline">
       <div className="flex justify-between items-end">
         <div className="space-y-1">
-          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter">Memories</h1>
-          <div className="flex items-center space-x-2 text-[10px] font-mono opacity-30">
-            <span className="w-2 h-2 bg-brand animate-pulse" />
-            <span className="uppercase">Archive_Module_v1.2</span>
+          <h1 className="text-4xl font-display font-black text-text-main uppercase tracking-tighter glow-text-white">Memories</h1>
+          <div className="flex items-center space-x-2 text-[10px] font-mono text-brand font-bold glow-brand">
+            <span className="w-2 h-2 bg-brand animate-ping rounded-full" />
+            <span className="uppercase tracking-[0.4em]">Archive_Module_v1.2</span>
           </div>
         </div>
         <button 
           onClick={() => setIsAdding(true)}
-          className="btn-primary p-3 bg-brand text-white rounded-2xl shadow-lg shadow-brand/20"
+          className="p-3 bg-brand text-white rounded-2xl shadow-xl shadow-brand/20 hover:scale-105 transition-all glow-brand"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-6 h-6 border-white/40" />
         </button>
       </div>
 
@@ -252,11 +290,11 @@ export default function GalleryScreen() {
             className="aspect-square bg-gray-100 rounded-3xl overflow-hidden relative group cursor-pointer tech-border"
           >
             {item.type === 'image' ? (
-              <img src={item.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              item.url && <img src={item.url} className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${IMAGE_FILTERS.find(f => f.id === item.filter)?.class || ''}`} />
             ) : (
               <div className="w-full h-full bg-black/5 flex items-center justify-center relative">
                 <Play className="w-8 h-8 text-brand/40" />
-                <video src={item.url} className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                {item.url && <video src={item.url} className="absolute inset-0 w-full h-full object-cover opacity-50" />}
               </div>
             )}
             
@@ -302,9 +340,13 @@ export default function GalleryScreen() {
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm glass p-8 rounded-[40px] space-y-6"
             >
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <h3 className="text-xl font-bold">Add Memory</h3>
-                <p className="text-xs opacity-50 italic">Enter a photo or video URL</p>
+                {error ? (
+                  <p className="text-[10px] text-red-500 font-bold uppercase animate-pulse">{error}</p>
+                ) : (
+                  <p className="text-xs opacity-50 italic">Enter a photo or video URL</p>
+                )}
               </div>
 
               <div className="flex p-1 bg-black/5 rounded-2xl">
@@ -322,13 +364,71 @@ export default function GalleryScreen() {
                 </button>
               </div>
 
-              <input 
-                autoFocus
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://images.com/our-date..."
-                className="w-full p-4 bg-white/40 rounded-2xl text-sm outline-none font-mono"
-              />
+              <div className="space-y-4">
+                <label className="btn-primary w-full py-4 bg-brand/5 border border-brand/10 text-brand rounded-[24px] flex flex-col items-center justify-center space-y-2 cursor-pointer transition-all hover:bg-brand/10">
+                  {uploading ? (
+                    <div className="w-5 h-5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-6 h-6" />
+                      <span className="text-[10px] font-mono font-black uppercase tracking-widest">Select from Gallery</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*,video/*" onChange={handleFileUpload} className="hidden" />
+                </label>
+
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-black/5" /></div>
+                  <span className="relative bg-white/40 px-3 text-[8px] font-mono opacity-20 uppercase">Or provide URL</span>
+                </div>
+
+                <input 
+                  autoFocus={!url}
+                  value={url.startsWith('data:') ? 'Image selected from device' : url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://images.com/our-date..."
+                  className="w-full p-4 bg-white/40 rounded-2xl text-sm outline-none font-mono truncate"
+                  readOnly={url.startsWith('data:')}
+                />
+              </div>
+
+              {url && (
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-black/5 group">
+                  {type === 'image' ? (
+                    url && <img src={url} className={`w-full h-full object-cover ${IMAGE_FILTERS.find(f => f.id === selectedFilter)?.class || ''}`} />
+                  ) : (
+                    url && <video src={url} className="w-full h-full object-cover" />
+                  )}
+                  <button 
+                    onClick={() => setUrl('')}
+                    className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {type === 'image' && url && (
+                <div className="space-y-3">
+                  <p className="text-[10px] uppercase tracking-widest font-bold opacity-30 px-1">Digital Processing</p>
+                  <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-none">
+                    {IMAGE_FILTERS.map(filter => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setSelectedFilter(filter.id)}
+                        className={`flex-shrink-0 space-y-2 group/filter transition-all ${selectedFilter === filter.id ? 'scale-105' : 'opacity-60'}`}
+                      >
+                        <div className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedFilter === filter.id ? 'border-brand' : 'border-transparent'}`}>
+                          {url && <img src={url} className={`w-full h-full object-cover ${filter.class}`} />}
+                        </div>
+                        <p className={`text-[8px] font-mono font-bold uppercase text-center ${selectedFilter === filter.id ? 'text-brand' : 'text-text-main/40'}`}>
+                          {filter.name}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <input 
                 value={caption}
@@ -378,7 +478,7 @@ export default function GalleryScreen() {
           >
             <motion.div layoutId={selectedMedia.id} className="relative w-full h-full flex items-center justify-center">
                {selectedMedia.type === 'image' ? (
-                <ZoomableImage src={selectedMedia.url} />
+                <ZoomableImage src={selectedMedia.url} filter={selectedMedia.filter} />
               ) : (
                 <div className="w-full max-w-4xl h-full flex items-center justify-center p-4">
                   <CustomVideoPlayer src={selectedMedia.url} />

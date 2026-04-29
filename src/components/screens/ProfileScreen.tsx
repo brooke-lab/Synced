@@ -3,9 +3,24 @@ import { motion } from 'motion/react';
 import { User, LogOut, Link2, Ghost, Sparkles, Heart, Copy, Check, Palette, ShieldAlert, Trash2, Edit3, Save, UserCircle, Upload, X } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { signOut, db } from '../../lib/firebase';
-import { doc, updateDoc, setDoc, getDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, deleteDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { THEMES } from '../../constants';
 import { logActivity } from '../../lib/activityLogger';
+
+const ZODIAC_SIGNS = [
+  { name: 'Aries', emoji: '♈️' },
+  { name: 'Taurus', emoji: '♉️' },
+  { name: 'Gemini', emoji: '♊️' },
+  { name: 'Cancer', emoji: '♋️' },
+  { name: 'Leo', emoji: '♌️' },
+  { name: 'Virgo', emoji: '♍️' },
+  { name: 'Libra', emoji: '♎️' },
+  { name: 'Scorpio', emoji: '♏️' },
+  { name: 'Sagittarius', emoji: '♐️' },
+  { name: 'Capricorn', emoji: '♑️' },
+  { name: 'Aquarius', emoji: '♒️' },
+  { name: 'Pisces', emoji: '♓️' }
+];
 
 export default function ProfileScreen() {
   const { user, couple, partner } = useAuth();
@@ -67,29 +82,23 @@ export default function ProfileScreen() {
   const coupleLink = async () => {
     if (!linkCode || !user) return;
     setError('');
+    setUploading(true);
     try {
-      // Find the partner by their invitation code
-      // Invitation code is user.uid.substring(0, 6)
-      // This is a bit tricky with only Firestore client SDK since we can't easily query by substring
-      // But we can assume the code IS the UID start.
-      // For a real app, I'd have a separate invitation codes collection.
-      // Let's assume the user enters the FULL UID for now or I provide a search by email?
-      // Actually, I'll stick to the provided code but I'll update the logic to be more functional.
+      const formattedCode = linkCode.trim().toUpperCase();
       
-      // Let's use the code to "search" for a user.
-      // Actually, the simplest is to have the 'coupleId' be the joiner's way to find the creator's space.
-      // If user A creates a space, they are 'owner'.
-      // If user B joins, they are 'member'.
-      
-      const coupleId = `couple_${linkCode}_${user.uid.substring(0,6)}`;
+      // The code is the first 6 chars of the creator's UID
+      // We need to find the user document that matches this invitation code
+      // To keep it simple without complex queries, we use a shared collection 'invitations'
+      // Or just a deterministic coupleId: space_6CHARCODE
+      const coupleId = `space_${formattedCode}`;
       const coupleRef = doc(db, 'couples', coupleId);
-
-      // Check if this couple already exists (someone might have joined already)
       const coupleSnap = await getDoc(coupleRef);
       
       if (!coupleSnap.exists()) {
+        // Create new space
         await setDoc(coupleRef, {
           members: [user.uid, 'PARTNER_WAITING'],
+          invitationCode: user.uid.substring(0, 6).toUpperCase(),
           createdAt: serverTimestamp(),
           theme: 'default',
           loveLetterDay: 0,
@@ -104,9 +113,12 @@ export default function ProfileScreen() {
           role: 'owner'
         });
       } else {
-        // Someone is trying to join an existing space
+        // Join existing space
         const data = coupleSnap.data();
-        if (data.members.includes('PARTNER_WAITING')) {
+        if (data.members.includes(user.uid)) {
+          // Already a member
+          await updateDoc(doc(db, 'users', user.uid), { coupleId: coupleId });
+        } else if (data.members.includes('PARTNER_WAITING')) {
            const newMembers = [data.members[0], user.uid];
            await updateDoc(coupleRef, {
              members: newMembers
@@ -116,19 +128,18 @@ export default function ProfileScreen() {
              role: 'member'
            });
            
-           // Also update the owner user to know their partner ID
-           await updateDoc(doc(db, 'users', data.members[0]), {
-             partnerId: user.uid
-           });
-           await updateDoc(doc(db, 'users', user.uid), {
-             partnerId: data.members[0]
-           });
+           // Mutual link
+           await updateDoc(doc(db, 'users', data.members[0]), { partnerId: user.uid });
+           await updateDoc(doc(db, 'users', user.uid), { partnerId: data.members[0] });
         } else {
           setError("This space is already full.");
         }
       }
+      setLinkCode('');
     } catch (e) {
       setError("Linking failed. Error: " + (e as any).message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -197,30 +208,36 @@ export default function ProfileScreen() {
   };
 
   return (
-    <div className="p-6 pt-12 space-y-8 min-h-screen pb-32">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-serif font-bold text-[#4A4440]">Profile</h1>
-        <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-400 transition-colors">
+    <div className="px-4 md:px-8 pt-10 space-y-10 min-h-screen pb-40">
+      <div className="flex justify-between items-center px-2">
+        <h1 className="text-3xl font-display font-black text-text-main uppercase tracking-tighter">Your Profile</h1>
+        <button onClick={handleLogout} className="p-3 bg-white/5 rounded-2xl text-text-main/20 hover:text-red-400 transition-colors">
           <LogOut className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex flex-col items-center space-y-4">
+      <div className="flex flex-col items-center space-y-6">
         <div 
-          className="relative group h-24"
+          className="relative group w-24 h-24"
         >
           <div 
             onClick={() => setIsEditingPhoto(!isEditingPhoto)}
-            className="w-24 h-24 rounded-[32px] bg-white shadow-xl flex items-center justify-center p-1 border-4 border-white cursor-pointer overflow-hidden transition-all active:scale-95 group-hover:border-brand/20"
+            className="w-24 h-24 rounded-[32px] bg-white/[0.02] border border-white/10 cursor-pointer overflow-hidden transition-all active:scale-95 hover:border-brand/40"
           >
-            <img src={user?.photoURL || ''} className="w-full h-full rounded-[28px] object-cover transition-all group-hover:scale-110" />
+            {user?.photoURL ? (
+              <img src={user.photoURL} className="w-full h-full object-cover transition-all group-hover:scale-110" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-black/5">
+                <User className="w-8 h-8 text-white/20" />
+              </div>
+            )}
             <div className="absolute inset-0 bg-brand/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-              <Upload className="w-5 h-5 text-white drop-shadow-md" />
+              <Upload className="w-5 h-5 text-white" />
             </div>
           </div>
           
           {uploading && (
-            <div className="absolute inset-0 rounded-[32px] bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="absolute inset-0 rounded-[32px] bg-bg-app/80 backdrop-blur-sm flex items-center justify-center z-10">
               <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
             </div>
           )}
@@ -240,8 +257,8 @@ export default function ProfileScreen() {
             </button>
 
             <div className="space-y-1">
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-40">System_Avatar // Update</h3>
-              <p className="text-xs font-bold">Choose your digital persona.</p>
+              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-40">Profile Photo // Update</h3>
+              <p className="text-xs font-bold">Choose your representative image.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -285,7 +302,10 @@ export default function ProfileScreen() {
           ) : (
             <div className="flex items-center justify-center space-x-2 group">
               <h2 className="text-xl font-bold">{user?.displayName}</h2>
-              <button onClick={() => setIsEditingName(true)} className="opacity-0 group-hover:opacity-40 transition-opacity">
+              <button 
+                onClick={() => setIsEditingName(true)} 
+                className="opacity-40 hover:opacity-100 transition-opacity p-1 bg-black/5 rounded-lg"
+              >
                 <Edit3 className="w-4 h-4" />
               </button>
             </div>
@@ -296,6 +316,47 @@ export default function ProfileScreen() {
               {user.role}
             </span>
           )}
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4 px-2 opacity-40">
+          <span className="w-8 h-[1px] bg-text-main" />
+          <h3 className="text-[9px] font-mono font-bold uppercase tracking-[0.6em] text-text-main">Astra_Profile</h3>
+        </div>
+        
+        <div className="card-neo !p-8 space-y-8 overflow-hidden relative border-white/[0.03]">
+          <div className="relative z-10 space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-text-main">Zodiac Origin</p>
+                <p className="text-[9px] font-mono font-bold text-text-main/20 uppercase tracking-widest">Alignment calibration</p>
+              </div>
+              <div className="text-3xl opacity-60">
+                {ZODIAC_SIGNS.find(s => s.name === user?.zodiacSign)?.emoji || '✨'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              {ZODIAC_SIGNS.map((sign) => (
+                <button
+                  key={sign.name}
+                  onClick={async () => {
+                    if (!user) return;
+                    await updateDoc(doc(db, 'users', user.uid), { zodiacSign: sign.name });
+                  }}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 border ${
+                    user?.zodiacSign === sign.name 
+                      ? 'bg-brand text-white border-brand shadow-lg' 
+                      : 'bg-white/[0.02] border-white/[0.05] hover:border-brand/40 opacity-40'
+                  }`}
+                >
+                  <span className="text-lg mb-1">{sign.emoji}</span>
+                  <span className="text-[8px] font-mono font-black uppercase tracking-tighter">{sign.name.substring(0, 3)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -312,7 +373,13 @@ export default function ProfileScreen() {
             <div className="flex flex-col space-y-4">
                <div className="flex items-center space-x-6 p-6 bg-white/40 rounded-[32px] relative group border border-brand/5">
                 <div className="relative">
-                  <img src={partner?.photoURL || ''} className="w-16 h-16 rounded-[24px] object-cover shadow-lg border-2 border-white" />
+                {partner?.photoURL ? (
+                  <img src={partner.photoURL} className="w-16 h-16 rounded-[24px] object-cover shadow-lg border-2 border-white" />
+                ) : (
+                  <div className="w-16 h-16 rounded-[24px] bg-black/5 flex items-center justify-center border-2 border-white">
+                    <UserCircle className="w-8 h-8 text-brand/40" />
+                  </div>
+                )}
                   <div className="absolute -bottom-1 -right-1 bg-brand text-white p-1 rounded-lg">
                     <Heart className="w-3 h-3 fill-current" />
                   </div>
@@ -350,6 +417,72 @@ export default function ProfileScreen() {
                 </div>
               </div>
             </div>
+
+            {/* Space Settings */}
+            <div className="space-y-4 pt-6 border-t border-black/5">
+              <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-30 px-2">Space Settings</h4>
+              
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-bold opacity-60 ml-2">Letter Reveal Day</label>
+                  <div className="grid grid-cols-7 gap-1">
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                      <button
+                        key={i}
+                        onClick={async () => {
+                          if (!couple?.id) return;
+                          await updateDoc(doc(db, 'couples', couple.id), { loveLetterDay: i });
+                        }}
+                        className={`py-2 rounded-xl text-[10px] font-mono font-black border transition-all ${
+                          couple.loveLetterDay === i 
+                            ? 'bg-brand text-white border-brand shadow-lg shadow-brand/20' 
+                            : 'bg-white text-gray-400 border-black/5 hover:border-brand/20'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col space-y-2">
+                  <label className="text-xs font-bold opacity-60 ml-2">Visual Theme</label>
+                  <div className="flex space-x-2 p-1 bg-black/5 rounded-2xl">
+                    {['default', 'dark', 'soft'].map((t) => (
+                      <button
+                        key={t}
+                        onClick={async () => {
+                          if (!couple?.id) return;
+                          await updateDoc(doc(db, 'couples', couple.id), { theme: t });
+                        }}
+                        className={`flex-1 py-2 text-[10px] font-mono font-black uppercase tracking-widest rounded-xl transition-all ${
+                          (couple.theme || 'default') === t 
+                            ? 'bg-white shadow-sm text-brand' 
+                            : 'opacity-40 hover:opacity-100'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={async () => {
+                if (!user || !couple?.id) return;
+                if (confirm("Disconnect from this space? You will lose access to shared memories.")) {
+                  await updateDoc(doc(db, 'users', user.uid), { coupleId: null, role: 'member' });
+                  await updateDoc(doc(db, 'couples', couple.id), {
+                    members: couple.members.filter((m: string) => m !== user.uid)
+                  });
+                }
+              }}
+              className="w-full py-4 text-[10px] font-mono font-black uppercase tracking-widest text-red-500 opacity-40 hover:opacity-100 transition-opacity"
+            >
+              [ DISCONNECT_SPACE ]
+            </button>
           </div>
         ) : (
           <div className="glass p-8 rounded-[40px] space-y-8">
@@ -359,9 +492,9 @@ export default function ProfileScreen() {
             </div>
             
             <div className="space-y-4">
-              <p className="text-sm opacity-60">Share your invitation code with your partner to sync your spaces.</p>
-              <div className="flex items-center justify-between p-4 bg-white/60 rounded-3xl">
-                <code className="text-lg font-black tracking-widest text-brand">
+              <p className="text-[10px] md:text-xs opacity-40 uppercase tracking-widest font-black ml-2">Share Invitation Code</p>
+              <div className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/10 rounded-2xl md:rounded-3xl">
+                <code className="text-base md:text-lg font-mono font-black tracking-widest text-brand">
                   {user?.uid?.substring(0, 6).toUpperCase()}
                 </code>
                 <button
@@ -370,81 +503,151 @@ export default function ProfileScreen() {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="p-2 bg-brand-soft rounded-xl text-brand"
+                  className="p-2 md:p-3 bg-brand/10 hover:bg-brand/20 rounded-xl text-brand transition-all"
                 >
-                  {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                  {copied ? <Check className="w-5 h-5 text-green-400" /> : <Copy className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-black/5">
-              <p className="text-sm opacity-60">Have a code from your partner?</p>
+            <div className="space-y-4 pt-4 border-t border-white/[0.05]">
+              <p className="text-[10px] md:text-xs opacity-40 uppercase tracking-widest font-black ml-2">Connect with Partner</p>
               <div className="flex space-x-2">
                 <input
                   value={linkCode}
                   onChange={e => setLinkCode(e.target.value)}
-                  placeholder="Enter code"
-                  className="flex-1 p-4 bg-white/60 rounded-3xl outline-none text-sm font-bold tracking-widest text-[#4A4440]"
+                  placeholder="CODE"
+                  className="flex-1 p-4 bg-white/[0.02] border border-white/10 rounded-2xl md:rounded-3xl outline-none text-xs md:text-sm font-mono font-black tracking-widest text-text-main focus:border-brand/40 transition-all"
                 />
                 <button
                   onClick={coupleLink}
-                  className="btn-primary px-6 bg-[#4A4440] text-white rounded-3xl text-sm font-bold shadow-lg"
+                  className="px-6 md:px-8 bg-brand text-white rounded-2xl md:rounded-3xl text-[10px] md:text-xs font-black uppercase tracking-widest shadow-xl shadow-brand/20 active:scale-95 transition-all"
                 >
                   Join
                 </button>
               </div>
-              {error && <p className="text-[10px] text-red-400 font-bold px-2">{error}</p>}
+              {error && <p className="text-[10px] text-red-500 font-bold px-2">{error}</p>}
             </div>
           </div>
         )}
 
-        <div className="space-y-4">
-          <h3 className="text-xs uppercase tracking-widest font-black opacity-30 px-2 mt-4">Ritual Settings</h3>
-          <div className="glass p-5 rounded-[32px] space-y-4">
-             <div className="flex items-center justify-between">
-               <span className="text-sm font-medium">Letter Reveal Day</span>
-               <select 
-                 value={couple?.loveLetterDay ?? 0}
-                 onChange={(e) => {
-                   if (couple?.id) {
-                     updateDoc(doc(db, 'couples', couple.id), { loveLetterDay: parseInt(e.target.value) });
-                   }
-                 }}
-                 className="bg-bg-app px-4 py-2 rounded-xl text-xs font-bold outline-none"
-               >
-                 {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
-                   <option key={i} value={i}>{day}</option>
-                 ))}
-               </select>
-             </div>
-             <p className="text-[10px] opacity-40 leading-relaxed italic">The day of the week both of your letters are unsealed and shared. 💌</p>
+        <div className="space-y-6">
+          <div className="flex items-center space-x-4 px-2 opacity-40">
+            <span className="w-8 h-[1px] bg-text-main" />
+            <h3 className="text-[9px] font-mono font-bold uppercase tracking-[0.6em] text-text-main">Interface_Styles</h3>
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <h3 className="text-xs uppercase tracking-widest font-black opacity-30 px-2 mt-4">Personalize Space</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {THEMES.map((t) => (
-              <button
+              <motion.button
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 key={t.id}
-                onClick={() => {
+                onClick={async () => {
                   if (couple?.id) {
-                    updateDoc(doc(db, 'couples', couple.id), { theme: t.id });
+                    await updateDoc(doc(db, 'couples', couple.id), { theme: t.id });
                   }
                 }}
-                className={`btn-primary flex items-center space-x-3 p-3 glass rounded-2xl transition-all ${couple?.theme === t.id ? 'ring-2 ring-brand' : ''}`}
+                className={`relative group overflow-hidden card-neo !p-6 flex items-center justify-between transition-all ${
+                  (couple?.theme || 'burgundy') === t.id 
+                    ? 'border-brand/40 bg-brand/[0.04] shadow-xl' 
+                    : 'opacity-40 hover:opacity-80'
+                }`}
               >
-                <div className="w-8 h-8 rounded-xl shadow-inner" style={{ backgroundColor: t.brand }} />
-                <span className="text-xs font-bold">{t.name}</span>
-              </button>
+                <div className="flex items-center space-x-6 relative z-10">
+                  <div 
+                    className="w-12 h-12 rounded-xl shadow-inner relative overflow-hidden flex items-center justify-center"
+                    style={{ background: t.gradient }}
+                  >
+                    <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: t.brand }} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-lg font-display font-black text-text-main uppercase tracking-tight leading-none">{t.name}</p>
+                    <p className="text-[9px] font-mono font-bold text-brand/60 uppercase tracking-widest mt-2 transition-all">
+                      {t.id.toUpperCase()}_PROFILE
+                    </p>
+                  </div>
+                </div>
+                
+                {(couple?.theme || 'burgundy') === t.id && (
+                  <motion.div 
+                    layoutId="active-theme-check"
+                    className="bg-brand text-white p-2 rounded-xl shadow-lg relative z-10"
+                  >
+                    <Check className="w-3 h-3 stroke-[3px]" />
+                  </motion.div>
+                )}
+              </motion.button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2">
-           <MenuBtn label="Daily Notifications" active={true} />
-           <MenuBtn label="Dark Mode" active={false} />
-           <MenuBtn label="Privacy Policy" active={false} />
+        {/* Connection Rituals Settings */}
+        <div className="space-y-6">
+          <div className="flex items-center space-x-4 px-2 opacity-40">
+            <span className="w-8 h-[1.5px] bg-text-main" />
+            <h3 className="text-[9px] font-mono font-black uppercase tracking-[0.6em] text-text-main">Connection_Rituals</h3>
+          </div>
+          
+          <div className="card-neo !p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-text-main">Letter Reveal Ritual</p>
+                <p className="text-[10px] font-mono font-medium text-text-main/40 uppercase tracking-wider">Weekly letter sharing</p>
+              </div>
+              <select 
+                value={couple?.loveLetterDay ?? 0}
+                onChange={async (e) => {
+                  if (couple?.id) {
+                    await updateDoc(doc(db, 'couples', couple.id), { loveLetterDay: parseInt(e.target.value) });
+                  }
+                }}
+                className="bg-black/[0.03] border border-black/[0.05] p-3 px-5 rounded-2xl text-xs font-mono font-bold outline-none focus:border-brand/40 transition-all cursor-pointer"
+              >
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
+                  <option key={i} value={i}>{day.toUpperCase()}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+           <MenuBtn 
+             label="Daily Notifications" 
+             active={user?.settings?.notifications ?? true} 
+             onClick={async () => {
+               if (!user) return;
+               await updateDoc(doc(db, 'users', user.uid), { 
+                 'settings.notifications': !(user?.settings?.notifications ?? true) 
+               });
+             }}
+           />
+           <MenuBtn 
+             label="Focus Mode Sync" 
+             active={user?.isFocused ?? false} 
+             onClick={async () => {
+               if (!user) return;
+               const newStatus = !(user?.isFocused ?? false);
+               await updateDoc(doc(db, 'users', user.uid), { 
+                 isFocused: newStatus,
+                 status: newStatus ? 'Deep Work' : (user.status === 'Deep Work' ? 'Available' : user.status),
+                 statusEmoji: newStatus ? '🧠' : (user.statusEmoji === '🧠' ? '✨' : user.statusEmoji)
+               });
+               if (couple?.id) {
+                 await logActivity(couple.id, user.uid, 'status', newStatus ? 'entered Deep Work mode 🧠' : 'is now available', { isFocused: newStatus });
+               }
+             }}
+           />
+           <MenuBtn 
+             label="Privacy Shield" 
+             active={user?.settings?.privacy ?? false} 
+             onClick={async () => {
+               if (!user) return;
+               await updateDoc(doc(db, 'users', user.uid), { 
+                 'settings.privacy': !(user?.settings?.privacy ?? false) 
+               });
+             }}
+           />
         </div>
 
         <div className="space-y-4 pt-8">
@@ -481,13 +684,16 @@ export default function ProfileScreen() {
   );
 }
 
-function MenuBtn({ label, active }: any) {
+function MenuBtn({ label, active, onClick }: any) {
   return (
-    <div className="flex items-center justify-between p-5 glass rounded-[24px]">
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-5 glass rounded-[24px] text-left transition-all active:scale-[0.98]"
+    >
       <span className="text-sm font-medium opacity-70">{label}</span>
       <div className={`w-10 h-6 rounded-full p-1 transition-colors ${active ? 'bg-brand' : 'bg-gray-200'}`}>
         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${active ? 'translate-x-4' : ''}`} />
       </div>
-    </div>
+    </button>
   );
 }

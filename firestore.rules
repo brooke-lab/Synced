@@ -54,11 +54,30 @@ service cloud.firestore {
 
     // --- Couples ---
     match /couples/{coupleId} {
-      allow read: if isSignedIn() && request.auth.uid in existing().members;
-      allow create: if isSignedIn() && request.auth.uid in incoming().members && incoming().members.size() <= 2;
-      allow update: if isSignedIn() && request.auth.uid in existing().members &&
-                     incoming().members == existing().members &&
-                     incoming().diff(existing()).affectedKeys().hasOnly(['anniversary', 'quoteOfTheDay', 'theme', 'loveLetterDay']);
+      allow get: if isSignedIn() && (
+        coupleId == 'solo_' + request.auth.uid ||
+        coupleId.startsWith('space_') ||
+        (resource != null && request.auth.uid in resource.data.members)
+      );
+      allow list: if isSignedIn() && resource.data.members.size() > 0 && request.auth.uid in resource.data.members;
+      
+      allow create: if isSignedIn() && 
+                     request.auth.uid in incoming().members && 
+                     incoming().members.size() <= 2 &&
+                     (coupleId == 'solo_' + request.auth.uid || coupleId.startsWith('space_'));
+                     
+      allow update: if isSignedIn() && (
+                       (request.auth.uid in existing().members && 
+                        incoming().members == existing().members && 
+                        incoming().diff(existing()).affectedKeys().hasOnly(['anniversary', 'quoteOfTheDay', 'theme', 'loveLetterDay', 'invitationCode'])) ||
+                       
+                       // Action: Join space (swapping PARTNER_WAITING for a real UID)
+                       (existing().members.size() == 2 && 
+                        existing().members[1] == 'PARTNER_WAITING' && 
+                        incoming().members.size() == 2 &&
+                        incoming().members[0] == existing().members[0] &&
+                        incoming().members[1] == request.auth.uid)
+                     );
     }
 
     // --- Sub-collections under Couples ---

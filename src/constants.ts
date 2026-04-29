@@ -10,48 +10,57 @@ export interface ThemePreset {
 
 export const THEMES: ThemePreset[] = [
   {
-    id: 'pink',
-    name: 'Soft Peony',
-    brand: '#F472B6',
-    soft: '#FDF2F8',
-    bg: '#FAF7F2',
-    text: '#4A4440',
-    gradient: 'radial-gradient(circle at 10% 20%, #FDF2F8 0%, transparent 40%), radial-gradient(circle at 90% 80%, #F5F7FF 0%, transparent 40%)'
+    id: 'burgundy',
+    name: 'Cyber Burgundy',
+    brand: '#C1121F',
+    soft: '#2B0508',
+    bg: '#0A0102',
+    text: '#FDF0F0',
+    gradient: 'radial-gradient(circle at 0% 0%, rgba(193, 18, 31, 0.15) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(120, 0, 0, 0.1) 0%, transparent 40%)'
   },
   {
-    id: 'blue',
-    name: 'Morning Mist',
-    brand: '#60A5FA',
-    soft: '#EFF6FF',
+    id: 'cyber',
+    name: 'Cyber Neon',
+    brand: '#FF006E',
+    soft: '#FFF0F6',
+    bg: '#FFFFFF',
+    text: '#0D0D0D',
+    gradient: 'radial-gradient(circle at 0% 0%, rgba(255, 0, 110, 0.05) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(0, 245, 255, 0.05) 0%, transparent 40%)'
+  },
+  {
+    id: 'midnight',
+    name: 'Midnight Velvet',
+    brand: '#7B2CBF',
+    soft: '#F3E8FF',
+    bg: '#050505',
+    text: '#F5F5F5',
+    gradient: 'radial-gradient(circle at 10% 20%, rgba(123, 44, 191, 0.1) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(60, 9, 108, 0.1) 0%, transparent 40%)'
+  },
+  {
+    id: 'chrome',
+    name: 'Liquid Chrome',
+    brand: '#00F5FF',
+    soft: '#E0FDFF',
     bg: '#F8FAFC',
-    text: '#334155',
-    gradient: 'radial-gradient(circle at 10% 20%, #EFF6FF 0%, transparent 40%), radial-gradient(circle at 90% 80%, #F1F5F9 0%, transparent 40%)'
-  },
-  {
-    id: 'green',
-    name: 'Sage Garden',
-    brand: '#10B981',
-    soft: '#ECFDF5',
-    bg: '#F9FAF3',
-    text: '#064E3B',
-    gradient: 'radial-gradient(circle at 10% 20%, #ECFDF5 0%, transparent 40%), radial-gradient(circle at 90% 80%, #F0FDF4 0%, transparent 40%)'
+    text: '#0F172A',
+    gradient: 'radial-gradient(circle at 10% 20%, rgba(0, 245, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(58, 134, 255, 0.05) 0%, transparent 40%)'
   },
   {
     id: 'sunset',
-    name: 'Warm Sunset',
-    brand: '#FB923C',
-    soft: '#FFF7ED',
+    name: 'Lofi Sunset',
+    brand: '#FB5607',
+    soft: '#FFF0E6',
     bg: '#FFFBF7',
-    text: '#7C2D12',
-    gradient: 'radial-gradient(circle at 10% 20%, #FFF7ED 0%, transparent 40%), radial-gradient(circle at 90% 80%, #FFF1F2 0%, transparent 40%)'
+    text: '#432818',
+    gradient: 'radial-gradient(circle at 10% 20%, rgba(251, 86, 7, 0.05) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(255, 190, 11, 0.05) 0%, transparent 40%)'
   },
   {
-    id: 'minimal',
-    name: 'Pure Neutral',
-    brand: '#4B5563',
-    soft: '#F3F4F6',
+    id: 'glitch',
+    name: 'Glitch Core',
+    brand: '#3A86FF',
+    soft: '#EBF2FF',
     bg: '#FFFFFF',
-    text: '#111827',
-    gradient: 'radial-gradient(circle at 10% 20%, #F9FAFB 0%, transparent 40%), radial-gradient(circle at 90% 80%, #F3F4F6 0%, transparent 40%)'
+    text: '#0D0D0D',
+    gradient: 'radial-gradient(circle at 10% 20%, rgba(58, 134, 255, 0.05) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(255, 0, 110, 0.05) 0%, transparent 40%)'
   }
 ];

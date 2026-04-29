@@ -10,6 +10,8 @@ export interface UserProfile {
   lastSeen?: string;
   role?: 'owner' | 'member';
   nicknames?: Record<string, string>;
+  zodiacSign?: string;
+  brainBattery?: number;
 }
 
 export interface Couple {
@@ -22,7 +24,17 @@ export interface Couple {
     text: string;
     author: string;
   };
+  suggestedActivity?: string;
   theme?: string;
+  lastCosmicInsight?: string;
+  lastCosmicSync?: any;
+  studySession?: {
+    isActive: boolean;
+    startTime: any;
+    duration: number;
+    type: 'focus' | 'break';
+    startedBy: string;
+  };
 }
 
 export interface MusicDedication {
@@ -125,5 +137,12 @@ export interface Activity {
   userId: string;
   content: string;
   metadata?: any;
+  likedBy?: string[];
+  replies?: {
+    id: string;
+    userId: string;
+    text: string;
+    createdAt: any;
+  }[];
   createdAt: any;
 }
